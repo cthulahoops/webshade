@@ -5,6 +5,29 @@ var timeLocation;
 
 window.onload = init;
 
+async function bind_program(fragment_shader) {
+    shaderScript = document.getElementById("2d-vertex-shader");
+    shaderSource = shaderScript.text;
+    vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vertexShader, shaderSource);
+    gl.compileShader(vertexShader);
+
+    shaderResponse = await fetch(fragment_shader);
+    shaderSource   = await shaderResponse.text();
+
+    fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fragmentShader, shaderSource);
+    gl.compileShader(fragmentShader);
+
+    program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    timeLocation = gl.getUniformLocation(program, "iTime");
+}
+
 async function init() {
     var shaderScript;
     var shaderSource;
@@ -31,26 +54,7 @@ async function init() {
         gl.STATIC_DRAW
     );
 
-    shaderScript = document.getElementById("2d-vertex-shader");
-    shaderSource = shaderScript.text;
-    vertexShader = gl.createShader(gl.VERTEX_SHADER);
-    gl.shaderSource(vertexShader, shaderSource);
-    gl.compileShader(vertexShader);
-
-    shaderResponse = await fetch("/marching.frag");
-    shaderSource   = await shaderResponse.text();
-
-    fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fragmentShader, shaderSource);
-    gl.compileShader(fragmentShader);
-
-    program = gl.createProgram();
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    gl.useProgram(program);
-
-    timeLocation = gl.getUniformLocation(program, "iTime");
+    await bind_program("simple.frag");
 
     render()
 }
@@ -61,6 +65,12 @@ function seconds() {
 }
 
 var start_time = seconds();
+
+async function change_fragment_shader(select) {
+    let selected_program = select.selectedOptions[0].value;
+    console.log(selected_program);
+    await bind_program(selected_program);
+}
 
 function render() {
     window.requestAnimationFrame(render, canvas);
