@@ -6,7 +6,7 @@
 precision mediump int;
 
 const vec2 iResolution = vec2(640, 480);
-uniform float iTime;
+uniform float time;
 
 
 const int MAX_MARCHING_STEPS = 255;
@@ -53,8 +53,8 @@ Surface sdFloor(vec3 p, vec3 color) {
 }
 
 Surface sdScene(vec3 p) {
-  vec3 off1 = vec3(1.2 * sin(iTime), 0., cos(iTime) - 2.0);
-  vec3 off2 = vec3(1.2 * -sin(iTime), 0., -cos(iTime) - 2.0);
+  vec3 off1 = vec3(1.2 * sin(time), 0., cos(time) - 2.0);
+  vec3 off2 = vec3(1.2 * -sin(time), 0., -cos(time) - 2.0);
   Surface left = sdSphere(p, 1., off1, vec3(0.7, 0.2, 0.8));
   Surface right = maxSurface(
       sdSphere(p, 0.9, off2, vec3(0.7, 0.5, 0.4)),

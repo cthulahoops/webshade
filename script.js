@@ -2,30 +2,44 @@ var gl;
 var canvas;
 var buffer;
 var timeLocation;
+var program;
 
 window.onload = init;
 
+function compileShader(shaderType, source) {
+    let shader = gl.createShader(shaderType);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    return shader;
+}
+
 async function bind_program(fragment_shader) {
-    shaderScript = document.getElementById("2d-vertex-shader");
-    shaderSource = shaderScript.text;
-    vertexShader = gl.createShader(gl.VERTEX_SHADER);
-    gl.shaderSource(vertexShader, shaderSource);
-    gl.compileShader(vertexShader);
+    let vertexShader = compileShader(
+        gl.VERTEX_SHADER,
+        document.getElementById("2d-vertex-shader").text);
 
-    shaderResponse = await fetch(fragment_shader);
-    shaderSource   = await shaderResponse.text();
+    let shaderResponse = await fetch(fragment_shader);
+    let shaderSource   = await shaderResponse.text();
 
-    fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fragmentShader, shaderSource);
-    gl.compileShader(fragmentShader);
+    let fragmentShader = compileShader(
+        gl.FRAGMENT_SHADER,
+        shaderSource
+    );
 
-    program = gl.createProgram();
+    let program = gl.createProgram();
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
-    gl.useProgram(program);
 
-    timeLocation = gl.getUniformLocation(program, "iTime");
+    gl.validateProgram(program);
+
+    if ( !gl.getProgramParameter(program, gl.LINK_STATUS) ) {
+      var info = gl.getProgramInfoLog(program);
+      throw 'Could not compile WebGL program. \n\n' + info;
+    }
+
+    gl.useProgram(program);
+    return program;
 }
 
 async function init() {
@@ -34,8 +48,8 @@ async function init() {
     var vertexShader;
     var fragmentShader;
 
-    canvas	  = document.getElementById('glscreen');
-    gl		  = canvas.getContext('experimental-webgl');
+    canvas = document.getElementById('glscreen');
+    gl = canvas.getContext('experimental-webgl');
     canvas.width  = 640;
     canvas.height = 480;
 
@@ -54,7 +68,7 @@ async function init() {
         gl.STATIC_DRAW
     );
 
-    await bind_program("simple.frag");
+    await change_fragment_shader(document.getElementById("shader-selection"));
 
     render()
 }
@@ -69,11 +83,15 @@ var start_time = seconds();
 async function change_fragment_shader(select) {
     let selected_program = select.selectedOptions[0].value;
     console.log(selected_program);
-    await bind_program(selected_program);
+    program = await bind_program(selected_program);
 }
 
 function render() {
     window.requestAnimationFrame(render, canvas);
+
+    if (!program) {
+        return;
+    }
 
     gl.clearColor(1.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -82,6 +100,7 @@ function render() {
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
+    timeLocation = gl.getUniformLocation(program, "time");
     gl.uniform1f(timeLocation, seconds() - start_time)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
