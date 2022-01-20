@@ -49,11 +49,11 @@ Surface maxSurface(Surface a, Surface b) {
 
 
 float floorHeight(vec3 p) {
-  return 0.4 * sin(length(p.xz - vec2(0., 3.)) + time) - 1.0;
+  return 0.4 * sin(length(p.xz - vec2(0., 3.)) - 1.3 * time) + 0.05 * sin(3.0 * length(p.xz - vec2(7., 3.)) + time)- 1.0;
 }
 
 Surface sdFloor(vec3 p, vec3 color) {
-  return Surface(p.y - floorHeight(p), (0.5 + 0.5 * mod(floor(p.x) + floor(p.z), 2.0)) * vec3(1.0));
+  return Surface(p.y - floorHeight(p), (0.5 + 0.5 * mod(floor(p.x) + floor(p.z), 2.0)) * vec3(0.8,0.8,1.0));
 }
 
 Surface sdScene(vec3 p) {
