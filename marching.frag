@@ -18,6 +18,10 @@ struct Surface {
   vec3 color;
 };
 
+struct Ray {
+  vec3 origin;
+  vec3 direction;
+};
 
 Surface sdSphere(vec3 p, float r, vec3 offset, vec3 color)
 {
@@ -67,12 +71,12 @@ Surface sdScene(vec3 p) {
   return minSurface(minSurface(left, right), sdFloor(p, vec3(0.5, 1.0, 1.0)));
 }
 
-Surface rayMarch(vec3 ro, vec3 rd, float start, float end) {
+Surface rayMarch(Ray ray, float start, float end) {
   float depth = start;
   Surface co;
 
   for (int i = 0; i < MAX_MARCHING_STEPS; i++) {
-    vec3 p = ro + depth * rd;
+    vec3 p = ray.origin + depth * ray.direction;
     co = sdScene(p);
     depth += co.distance;
     if (co.distance < PRECISION || depth > end) break;
@@ -103,19 +107,18 @@ void main() {
 
   vec3 backgroundColor = vec3(0.835, 1, 1);
 
-  vec3 col = vec3(0);
-  vec3 ro = vec3(0, 1.0, 3); // ray origin that represents camera position
-  vec3 rd = normalize(vec3(uv, -1)); // ray direction
+  vec3 color = vec3(0);
+  Ray camera = Ray(vec3(0, 1.0, 3), normalize(vec3(uv, -1)));
 
-  Surface obj = rayMarch(ro, rd, MIN_DIST, MAX_DIST); // distance to sphere
+  Surface obj = rayMarch(camera, MIN_DIST, MAX_DIST); // distance to sphere
 
   if (obj.distance > MAX_DIST) {
-    col = backgroundColor; // ray didn't hit anything
+    color = backgroundColor; // ray didn't hit anything
   } else {
-    vec3 p = ro + rd * obj.distance; // point on sphere we discovered from ray marching
-    vec3 normal = calcNormal(p);
+    vec3 point = camera.origin + camera.direction * obj.distance;
+    vec3 normal = calcNormal(point);
     vec3 lightPosition = vec3(-8, 4.0, 0);
-    vec3 lightDirection = normalize(lightPosition - p);
+    vec3 lightDirection = normalize(lightPosition - point);
 
     // Calculate diffuse reflection by taking the dot product of 
     // the normal and the light direction.
@@ -123,10 +126,10 @@ void main() {
 
     // Multiply the diffuse reflection value by an orange color and add a bit
     // of the background color to the sphere to blend it more with the background.
-    col = 0.7 * diffuse * obj.color + backgroundColor * .1;
+    color = 0.7 * diffuse * obj.color + backgroundColor * .1;
     // col = obj.color;
   }
 
   // Output to screen
-  gl_FragColor = vec4(col, 1.);
+  gl_FragColor = vec4(color, 1.);
 }
