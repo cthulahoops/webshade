@@ -12,13 +12,19 @@ void main() {
 </head>
 
 <body>
-<canvas id="glscreen"></canvas>
-<div>
-    <select id="shader-selection" onchange="change_fragment_shader(this)">
-        <option>marching.frag</option>
-        <option>simple.frag</option>
-    </select>
-    <button onclick="refresh_shader()">Refresh</button>
+<div style="float: left;">
+    <canvas id="glscreen"></canvas>
+    <div>
+        <select id="shader-selection" onchange="change_fragment_shader(this)">
+            <option>marching.frag</option>
+            <option>simple.frag</option>
+        </select>
+        <button onclick="refresh_shader()">Refresh</button>
+    </div>
+</div>
+<div style="float: left;">
+    <textarea id=shader_source cols=100 rows=30 onchange="textarea_updated()">
+    </textarea>
     <div id="fragment_errors">
     </div>
 </div>

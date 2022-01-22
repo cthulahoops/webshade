@@ -126,11 +126,19 @@ async function change_fragment_shader(select) {
     let shaderResponse = await fetch(selected_program);
     let shaderSource   = await shaderResponse.text();
 
+    document.getElementById("shader_source").value = shaderSource;
+
     program = await bind_program_source(shaderSource);
 }
 
 async function refresh_shader() {
     await change_fragment_shader(document.getElementById("shader-selection"));
+}
+
+async function textarea_updated() {
+    console.log("Recompiling from textarea.");
+    let source = document.getElementById("shader_source").value;
+    program = await bind_program_source(source);
 }
 
 function render() {
