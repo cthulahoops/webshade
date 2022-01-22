@@ -29,11 +29,11 @@ Surface sdSphere(vec3 p, float r, vec3 offset, vec3 color, vec3 reflectance)
   return Surface(length(p - offset) - r, color, reflectance);
 }
 
-Surface sdCube(vec3 p, float b, vec3 offset, vec3 color) {
+Surface sdCube(vec3 p, float b, vec3 offset, vec3 color, vec3 reflectance) {
   p = p - offset;
   vec3 q = abs(p) - b;
   float d = length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
-  return Surface(d, color, vec3(0.));
+  return Surface(d, color, reflectance);
 }
 
 
@@ -62,16 +62,20 @@ Surface sdFloor(vec3 p, vec3 color) {
   return Surface(p.y - floorHeight(p), (0.5 + 0.5 * tile) * color, vec3(1. - tile));
 }
 
+Surface sdCubere(vec3 p, vec3 offset) {
+  return maxSurface(
+      sdSphere(p, 0.9, offset, vec3(0.7, 0.5, 0.4), vec3(.95)),
+      sdCube(p, 0.7, offset, vec3(1.0, 0.3, 0.4), vec3(0.)));
+}
+
 Surface sdScene(vec3 p) {
   vec3 off1 = vec3(1.2 * sin(time), 0., cos(time) - 2.0);
-  off1.y = 1.0 + floorHeight(off1);
-  Surface ball = sdSphere(p, 1., off1, vec3(0.8, 0.2, 0.8), vec3(0.));
+  off1.y = 0.7 + floorHeight(off1);
+  Surface ball = sdCubere(p, off1);
 
   vec3 off2 = vec3(1.2 * -sin(time), 0., -cos(time) - 2.0);
   off2.y = 0.7 + floorHeight(off2);
-  Surface cubere = maxSurface(
-      sdSphere(p, 0.9, off2, vec3(0.7, 0.5, 0.4), vec3(.95)),
-      sdCube(p, 0.7, off2, vec3(1.0, 0.3, 0.4)));
+  Surface cubere = sdCubere(p, off2);
 
   Surface floor = sdFloor(p, vec3(0.5));
   return minSurface(minSurface(ball, cubere), floor);
@@ -137,12 +141,17 @@ void main() {
 
       ray = Ray(point, reflect(ray.direction, normal));
 
+      /* Surface source = rayMarch(Ray(point, lightDirection), MIN_DIST, MAX_DIST); */
+      /* if (source.distance > MAX_DIST) { */
       float diffuse = clamp(dot(normal, lightDirection), 0.3, 1.);
+      /* } else { */
+      /*   diffuse = 0.; */
+      /* } */
+
       color += attentuation * (vec3(1.) - obj.reflectance) * (diffuse + AMBIENT) * obj.color;
       attentuation *= obj.reflectance;
     }
   }
 
-  // Output to screen
   gl_FragColor = vec4(color, 1.);
 }
