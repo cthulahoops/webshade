@@ -68,17 +68,18 @@ Surface sdCubere(vec3 p, vec3 offset) {
       sdCube(p, 0.7, offset, vec3(1.0, 0.3, 0.4), vec3(0.)));
 }
 
-Surface sdScene(vec3 p) {
-  vec3 off1 = vec3(1.2 * sin(time), 0., cos(time) - 2.0);
-  off1.y = 0.7 + floorHeight(off1);
-  Surface ball = sdCubere(p, off1);
+vec3 onFloor(vec3 p) {
+  return vec3(p.x, floorHeight(p) + p.y, p.z);
+}
 
-  vec3 off2 = vec3(1.2 * -sin(time), 0., -cos(time) - 2.0);
-  off2.y = 0.7 + floorHeight(off2);
-  Surface cubere = sdCubere(p, off2);
+Surface sdScene(vec3 p) {
+  Surface ball = sdSphere(p, 0.3, onFloor(vec3(0., 0., 0.)), vec3(7.0, 0.1, 0.8), vec3(0.));
+
+  Surface cubere1 = sdCubere(p, onFloor(vec3(1.2 * sin(time), 0.7, cos(time))));
+  Surface cubere2 = sdCubere(p, onFloor(vec3(1.2 * -sin(time), 0.7, -cos(time))));
 
   Surface floor = sdFloor(p, vec3(0.5));
-  return minSurface(minSurface(ball, cubere), floor);
+  return minSurface(minSurface(minSurface(ball, cubere1), cubere2), floor);
 }
 
 Surface rayMarch(Ray ray, float start, float end) {
@@ -121,7 +122,7 @@ void main() {
   vec3 backgroundColor = vec3(0.835, 1, 1);
 
   vec3 color = vec3(0);
-  Ray camera = Ray(vec3(0, 1.0, 3), normalize(vec3(uv, -1)));
+  Ray camera = Ray(vec3(0, 1.0, 4), normalize(vec3(uv, -1)));
 
   Ray ray = camera;
   Surface obj;
