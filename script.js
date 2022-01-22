@@ -71,7 +71,9 @@ async function init() {
 
     render()
 
-    connect_websocket()
+    if (window.location.hostname === '0.0.0.0') {
+        connect_websocket()
+    }
 }
 
 function connect_websocket() {
