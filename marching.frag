@@ -49,11 +49,11 @@ Surface maxSurface(Surface a, Surface b) {
 
 
 float floorHeight(vec3 p) {
-  return 0.4 * sin(length(p.xz - vec2(0., 3.)) - 1.3 * time) + 0.05 * sin(3.0 * length(p.xz - vec2(7., 3.)) + time)- 1.0;
+  return 0.1 * sin(3.0 * length(p.xz - vec2(0.0, -3.0)) + time);
 }
 
 Surface sdFloor(vec3 p, vec3 color) {
-  return Surface(p.y - floorHeight(p), (0.5 + 0.5 * mod(floor(p.x) + floor(p.z), 2.0)) * vec3(0.8,0.8,1.0));
+  return Surface(p.y - floorHeight(p), (0.5 + 0.5 * mod(floor(p.x) + floor(p.z), 2.0)) * color);
 }
 
 Surface sdScene(vec3 p) {
@@ -61,11 +61,11 @@ Surface sdScene(vec3 p) {
   off1.y = 1.0 + floorHeight(off1);
   vec3 off2 = vec3(1.2 * -sin(time), 0., -cos(time) - 2.0);
   off2.y = 0.7 + floorHeight(off2);
-  Surface left = sdSphere(p, 1., off1, vec3(0.7, 0.2, 0.8));
+  Surface left = sdSphere(p, 1., off1, vec3(0.8, 0.8, 0.4));
   Surface right = maxSurface(
       sdSphere(p, 0.9, off2, vec3(0.7, 0.5, 0.4)),
       sdCube(p, 0.7, off2, vec3(0.4, 0.5, 0.4)));
-  return minSurface(minSurface(left, right), sdFloor(p, vec3(0.5, 0.5, 0.5)));
+  return minSurface(minSurface(left, right), sdFloor(p, vec3(0.5, 1.0, 1.0)));
 }
 
 Surface rayMarch(vec3 ro, vec3 rd, float start, float end) {
@@ -83,13 +83,20 @@ Surface rayMarch(vec3 ro, vec3 rd, float start, float end) {
   return co;
 }
 
-vec3 calcNormal(in vec3 p) {
-    vec2 e = vec2(1.0, -1.0) * 0.0005; // epsilon
-    return normalize(
-      e.xyy * sdScene(p + e.xyy).distance +
-      e.yyx * sdScene(p + e.yyx).distance +
-      e.yxy * sdScene(p + e.yxy).distance +
-      e.xxx * sdScene(p + e.xxx).distance);
+vec3 calcNormal(vec3 p)
+{
+  float d = sdScene(p).distance; //very close to 0
+ 
+  vec2 e = vec2(.01, 0.0);
+ 
+  vec3 n = vec3
+  (
+       d - sdScene(p - e.xyy).distance,
+       d - sdScene(p - e.yxy).distance,
+       d - sdScene(p - e.yyx).distance
+  );
+ 
+  return normalize(n);
 }
 
 void main() {
@@ -98,7 +105,7 @@ void main() {
   vec3 backgroundColor = vec3(0.835, 1, 1);
 
   vec3 col = vec3(0);
-  vec3 ro = vec3(0, 0, 3); // ray origin that represents camera position
+  vec3 ro = vec3(0, 1.0, 3); // ray origin that represents camera position
   vec3 rd = normalize(vec3(uv, -1)); // ray direction
 
   Surface obj = rayMarch(ro, rd, MIN_DIST, MAX_DIST); // distance to sphere
@@ -108,16 +115,16 @@ void main() {
   } else {
     vec3 p = ro + rd * obj.distance; // point on sphere we discovered from ray marching
     vec3 normal = calcNormal(p);
-    vec3 lightPosition = vec3(2, 2, 7);
+    vec3 lightPosition = vec3(-8, 4.0, 0);
     vec3 lightDirection = normalize(lightPosition - p);
 
     // Calculate diffuse reflection by taking the dot product of 
     // the normal and the light direction.
-    float dif = clamp(dot(normal, lightDirection), 0.3, 1.);
+    float diffuse = clamp(dot(normal, lightDirection), 0.3, 1.);
 
     // Multiply the diffuse reflection value by an orange color and add a bit
     // of the background color to the sphere to blend it more with the background.
-    col = 0.7 * dif * obj.color + backgroundColor * .1;
+    col = 0.7 * diffuse * obj.color + backgroundColor * .1;
     // col = obj.color;
   }
 

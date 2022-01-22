@@ -13,13 +13,10 @@ function compileShader(shaderType, source) {
     return shader;
 }
 
-async function bind_program(fragment_shader) {
+function bind_program_source(shaderSource) {
     let vertexShader = compileShader(
         gl.VERTEX_SHADER,
         document.getElementById("2d-vertex-shader").text);
-
-    let shaderResponse = await fetch(fragment_shader);
-    let shaderSource   = await shaderResponse.text();
 
     let fragmentShader = compileShader(
         gl.FRAGMENT_SHADER,
@@ -34,9 +31,11 @@ async function bind_program(fragment_shader) {
     gl.validateProgram(program);
 
     if ( !gl.getProgramParameter(program, gl.LINK_STATUS) ) {
-      var info = gl.getProgramInfoLog(program);
-      throw 'Could not compile WebGL program. \n\n' + info;
+        var info = gl.getProgramInfoLog(program);
+        document.getElementById("fragment_errors").textContent = info;
+        return
     }
+    document.getElementById("fragment_errors").textContent = "";
 
     gl.useProgram(program);
     return program;
@@ -68,9 +67,49 @@ async function init() {
         gl.STATIC_DRAW
     );
 
-    await change_fragment_shader(document.getElementById("shader-selection"));
+    await change_fragment_shader(document.getElementById("shader-selection"))
 
     render()
+
+    connect_websocket()
+}
+
+function connect_websocket() {
+    let socket = new WebSocket("ws://localhost:5555/changes")
+    socket.onopen = function(e) {
+      console.log("[open] Connection established");
+    };
+
+    socket.onmessage = function(event) {
+        let filename = event.data;
+        console.log("Got refresh message for: ", filename);
+
+        let select = document.getElementById("shader-selection");
+        let selected_program = select.selectedOptions[0].value
+
+        if (selected_program != filename) {
+            for (const option of select.options) {
+                if (option.text == filename) {
+                    option.selected = true;
+                }
+            }
+        }
+        refresh_shader(select);
+    };
+
+    socket.onclose = function(event) {
+      if (event.wasClean) {
+        console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+      } else {
+        // e.g. server process killed or network down
+        // event.code is usually 1006 in this case
+        console.log('[close] Connection died');
+      }
+    };
+
+    socket.onerror = function(error) {
+      console.log(`[websocket error] ${error.message}`);
+    };
 }
 
 function seconds() {
@@ -81,9 +120,15 @@ function seconds() {
 var start_time = seconds();
 
 async function change_fragment_shader(select) {
-    let selected_program = select.selectedOptions[0].value;
-    console.log(selected_program);
-    program = await bind_program(selected_program);
+    let selected_program = select.selectedOptions[0].value
+    let shaderResponse = await fetch(selected_program);
+    let shaderSource   = await shaderResponse.text();
+
+    program = await bind_program_source(shaderSource);
+}
+
+async function refresh_shader() {
+    await change_fragment_shader(document.getElementById("shader-selection"));
 }
 
 function render() {
