@@ -119,7 +119,6 @@ function seconds() {
     return date.getTime() / 1000;
 }
 
-var start_time = seconds();
 
 async function change_fragment_shader(select) {
     let selected_program = select.selectedOptions[0].value
@@ -141,12 +140,18 @@ async function textarea_updated() {
     program = await bind_program_source(source);
 }
 
+let start_time = performance.now();
+let last_time = start_time;
+let frames = 0;
+
 function render() {
     window.requestAnimationFrame(render, canvas);
 
     if (!program) {
         return;
     }
+
+    let time = performance.now();
 
     gl.clearColor(1.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -156,10 +161,19 @@ function render() {
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
     timeLocation = gl.getUniformLocation(program, "time");
-    gl.uniform1f(timeLocation, seconds() - start_time)
+    gl.uniform1f(timeLocation, (time - start_time) / 1000)
 
     resolutionUniform = gl.getUniformLocation(program, "resolution");
     gl.uniform2fv(resolutionUniform, [canvas.width, canvas.height]);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    if (frames >= 100) {
+        document.getElementById("fps").textContent = Math.round(1000 * frames / (time - last_time));
+
+        frames = 0;
+        last_time = time;
+    }
+
+    frames += 1;
 }
