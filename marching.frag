@@ -16,6 +16,7 @@ const float MAX_DIST = 100.0;
 struct Surface {
   float distance;
   vec3 color;
+  vec3 reflectance;
 };
 
 struct Ray {
@@ -25,14 +26,14 @@ struct Ray {
 
 Surface sdSphere(vec3 p, float r, vec3 offset, vec3 color)
 {
-  return Surface(length(p - offset) - r, color);
+  return Surface(length(p - offset) - r, color, vec3(1.));
 }
 
 Surface sdCube(vec3 p, float b, vec3 offset, vec3 color) {
   p = p - offset;
   vec3 q = abs(p) - b;
   float d = length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
-  return Surface(d, color);
+  return Surface(d, color, vec3(0.));
 }
 
 
@@ -56,7 +57,9 @@ float floorHeight(vec3 p) {
 }
 
 Surface sdFloor(vec3 p, vec3 color) {
-  return Surface(p.y - floorHeight(p), (0.5 + 0.5 * mod(floor(p.x) + floor(p.z), 2.0)) * color);
+  float tile = (0.5 + 0.5 * mod(floor(p.x) + floor(p.z), 2.0));
+  vec3 reflectance = vec3(0.);
+  return Surface(p.y - floorHeight(p), tile * color, reflectance);
 }
 
 Surface sdScene(vec3 p) {
