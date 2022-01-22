@@ -42,6 +42,11 @@ function bind_program_source(shaderSource) {
 }
 
 async function init() {
+    let anchor_text = window.location.hash.substr(1);
+    if (anchor_text) {
+        select_program(anchor_text);
+    }
+
     var shaderScript;
     var shaderSource;
     var vertexShader;
@@ -73,6 +78,16 @@ async function init() {
 
     if (window.location.hostname === '0.0.0.0') {
         connect_websocket()
+    }
+}
+
+function select_program(filename) {
+    console.log("Selecting: ", filename);
+    let select = document.getElementById("shader-selection");
+    for (const option of select.options) {
+        if (option.text == filename) {
+            option.selected = true;
+        }
     }
 }
 
@@ -122,6 +137,8 @@ function seconds() {
 
 async function change_fragment_shader(select) {
     let selected_program = select.selectedOptions[0].value
+
+    window.location.hash = '#' + selected_program;
     let shaderResponse = await fetch(selected_program);
     let shaderSource   = await shaderResponse.text();
 
