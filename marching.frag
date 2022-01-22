@@ -9,9 +9,9 @@ uniform vec2 resolution;
 uniform float time;
 
 const int MAX_MARCHING_STEPS = 255;
-const float MIN_DIST = 0.0;
-const float MAX_DIST = 100.0;
 const float PRECISION = 0.001;
+const float MIN_DIST = 0.005;
+const float MAX_DIST = 100.0;
 
 struct Surface {
   float distance;
@@ -105,29 +105,30 @@ vec3 calcNormal(vec3 p)
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * resolution.xy) / resolution.y;
 
+  vec3 lightPosition = vec3(-8, 4.0, 0);
   vec3 backgroundColor = vec3(0.835, 1, 1);
 
   vec3 color = vec3(0);
   Ray camera = Ray(vec3(0, 1.0, 3), normalize(vec3(uv, -1)));
 
-  Surface obj = rayMarch(camera, MIN_DIST, MAX_DIST); // distance to sphere
+  Ray ray = camera;
+  Surface obj;
+  for(int i=0; i<5; i++) {
+    obj = rayMarch(ray, MIN_DIST, MAX_DIST);
 
-  if (obj.distance > MAX_DIST) {
-    color = backgroundColor; // ray didn't hit anything
-  } else {
-    vec3 point = camera.origin + camera.direction * obj.distance;
-    vec3 normal = calcNormal(point);
-    vec3 lightPosition = vec3(-8, 4.0, 0);
-    vec3 lightDirection = normalize(lightPosition - point);
+    if (obj.distance > MAX_DIST) {
+      // ray didn't hit anything
+      color = backgroundColor;
+    } else {
+      vec3 point = ray.origin + ray.direction * obj.distance;
+      vec3 normal = calcNormal(point);
+      vec3 lightDirection = normalize(lightPosition - point);
 
-    // Calculate diffuse reflection by taking the dot product of 
-    // the normal and the light direction.
-    float diffuse = clamp(dot(normal, lightDirection), 0.3, 1.);
+      ray = Ray(point, reflect(ray.direction, normal));
 
-    // Multiply the diffuse reflection value by an orange color and add a bit
-    // of the background color to the sphere to blend it more with the background.
-    color = 0.7 * diffuse * obj.color + backgroundColor * .1;
-    // col = obj.color;
+      float diffuse = clamp(dot(normal, lightDirection), 0.3, 1.);
+      color = 0.7 * diffuse * obj.color + backgroundColor * .1;
+    }
   }
 
   // Output to screen
