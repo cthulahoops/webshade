@@ -49,8 +49,8 @@ async function init() {
 
     canvas = document.getElementById('glscreen');
     gl = canvas.getContext('experimental-webgl');
-    canvas.width  = 640;
-    canvas.height = 480;
+    canvas.width  = 800;
+    canvas.height = 600;
 
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     buffer = gl.createBuffer();
@@ -147,6 +147,9 @@ function render() {
 
     timeLocation = gl.getUniformLocation(program, "time");
     gl.uniform1f(timeLocation, seconds() - start_time)
+
+    resolutionUniform = gl.getUniformLocation(program, "resolution");
+    gl.uniform2fv(resolutionUniform, [canvas.width, canvas.height]);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 }

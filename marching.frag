@@ -5,9 +5,8 @@
 #endif
 precision mediump int;
 
-const vec2 iResolution = vec2(640, 480);
+uniform vec2 resolution;
 uniform float time;
-
 
 const int MAX_MARCHING_STEPS = 255;
 const float MIN_DIST = 0.0;
@@ -100,7 +99,7 @@ vec3 calcNormal(vec3 p)
 }
 
 void main() {
-  vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution.xy) / iResolution.y;
+  vec2 uv = (gl_FragCoord.xy - 0.5 * resolution.xy) / resolution.y;
 
   vec3 backgroundColor = vec3(0.835, 1, 1);
 
@@ -129,5 +128,5 @@ void main() {
   }
 
   // Output to screen
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(col, 1.);
 }

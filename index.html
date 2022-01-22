@@ -14,13 +14,14 @@ void main() {
 
 <body>
 <canvas id="glscreen"></canvas>
-</body>
-<select id="shader-selection" onchange="change_fragment_shader(this)">
-    <option>marching.frag</option>
-    <option>simple.frag</option>
-</select>
-<button onclick="refresh_shader()">Refresh</button>
-<div id="fragment_errors">
+<div>
+    <select id="shader-selection" onchange="change_fragment_shader(this)">
+        <option>marching.frag</option>
+        <option>simple.frag</option>
+    </select>
+    <button onclick="refresh_shader()">Refresh</button>
+    <div id="fragment_errors">
+    </div>
 </div>
-
+</body>
 </html>
