@@ -116,12 +116,15 @@ void main() {
 
   Ray ray = camera;
   Surface obj;
+  vec3 attentuation = vec3(1.0);
+
   for(int i=0; i<5; i++) {
     obj = rayMarch(ray, MIN_DIST, MAX_DIST);
 
     if (obj.distance > MAX_DIST) {
       // ray didn't hit anything
-      color = backgroundColor;
+      color += attentuation * backgroundColor;
+      attentuation = vec3(0.0);
     } else {
       vec3 point = ray.origin + ray.direction * obj.distance;
       vec3 normal = calcNormal(point);
@@ -130,7 +133,8 @@ void main() {
       ray = Ray(point, reflect(ray.direction, normal));
 
       float diffuse = clamp(dot(normal, lightDirection), 0.3, 1.);
-      color = 0.7 * diffuse * obj.color + backgroundColor * .1;
+      color += attentuation * (vec3(1.) - obj.reflectance) * (0.7 * diffuse * obj.color + backgroundColor * .1);
+      attentuation *= obj.reflectance;
     }
   }
 
