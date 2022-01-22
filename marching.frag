@@ -24,9 +24,9 @@ struct Ray {
   vec3 direction;
 };
 
-Surface sdSphere(vec3 p, float r, vec3 offset, vec3 color)
+Surface sdSphere(vec3 p, float r, vec3 offset, vec3 color, vec3 reflectance)
 {
-  return Surface(length(p - offset) - r, color, vec3(1.));
+  return Surface(length(p - offset) - r, color, reflectance);
 }
 
 Surface sdCube(vec3 p, float b, vec3 offset, vec3 color) {
@@ -57,21 +57,24 @@ float floorHeight(vec3 p) {
 }
 
 Surface sdFloor(vec3 p, vec3 color) {
-  float tile = (0.5 + 0.5 * mod(floor(p.x) + floor(p.z), 2.0));
+  float tile = mod(floor(p.x) + floor(p.z), 2.0);
   vec3 reflectance = vec3(0.);
-  return Surface(p.y - floorHeight(p), tile * color, reflectance);
+  return Surface(p.y - floorHeight(p), (0.5 + 0.5 * tile) * color, vec3(1. - tile));
 }
 
 Surface sdScene(vec3 p) {
   vec3 off1 = vec3(1.2 * sin(time), 0., cos(time) - 2.0);
   off1.y = 1.0 + floorHeight(off1);
+  Surface ball = sdSphere(p, 1., off1, vec3(0.8, 0.2, 0.8), vec3(0.));
+
   vec3 off2 = vec3(1.2 * -sin(time), 0., -cos(time) - 2.0);
   off2.y = 0.7 + floorHeight(off2);
-  Surface left = sdSphere(p, 1., off1, vec3(0.8, 0.8, 0.4));
-  Surface right = maxSurface(
-      sdSphere(p, 0.9, off2, vec3(0.7, 0.5, 0.4)),
-      sdCube(p, 0.7, off2, vec3(0.4, 0.5, 0.4)));
-  return minSurface(minSurface(left, right), sdFloor(p, vec3(0.5, 1.0, 1.0)));
+  Surface cubere = maxSurface(
+      sdSphere(p, 0.9, off2, vec3(0.7, 0.5, 0.4), vec3(.95)),
+      sdCube(p, 0.7, off2, vec3(1.0, 0.3, 0.4)));
+
+  Surface floor = sdFloor(p, vec3(0.5));
+  return minSurface(minSurface(ball, cubere), floor);
 }
 
 Surface rayMarch(Ray ray, float start, float end) {
