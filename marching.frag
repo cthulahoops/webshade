@@ -108,6 +108,8 @@ vec3 calcNormal(vec3 p)
   return normalize(n);
 }
 
+const vec3 AMBIENT = vec3(0.05, 0.05, 0.1);
+
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * resolution.xy) / resolution.y;
 
@@ -136,7 +138,7 @@ void main() {
       ray = Ray(point, reflect(ray.direction, normal));
 
       float diffuse = clamp(dot(normal, lightDirection), 0.3, 1.);
-      color += attentuation * (vec3(1.) - obj.reflectance) * (0.7 * diffuse * obj.color + backgroundColor * .1);
+      color += attentuation * (vec3(1.) - obj.reflectance) * (diffuse + AMBIENT) * obj.color;
       attentuation *= obj.reflectance;
     }
   }
