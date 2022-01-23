@@ -13,6 +13,8 @@ const float PRECISION = 0.001;
 const float MIN_DIST = 0.005;
 const float MAX_DIST = 100.0;
 
+const vec3 BACKGROUND_COLOR = vec3(0.4, 0.7, 1.);
+
 struct Surface {
   float distance;
   vec3 color;
@@ -64,8 +66,8 @@ Surface sdFloor(vec3 p, vec3 color) {
 
 Surface sdCubere(vec3 p, vec3 offset) {
   return maxSurface(
-      sdSphere(p, 0.9, offset, vec3(0.7, 0.5, 0.4), vec3(.95)),
-      sdCube(p, 0.7, offset, vec3(1.0, 0.3, 0.4), vec3(0.)));
+      sdSphere(p, 0.9, offset, vec3(0.7, 0.5, 0.4), vec3(.7, .3, .7)),
+      sdCube(p, 0.7, offset, vec3(0, 0., 0.), vec3(0.3, 0., 0.)));
 }
 
 vec3 onFloor(vec3 p) {
@@ -73,7 +75,7 @@ vec3 onFloor(vec3 p) {
 }
 
 Surface sdScene(vec3 p) {
-  Surface ball = sdSphere(p, 0.3, onFloor(vec3(0., 0., 0.)), vec3(7.0, 0.1, 0.8), vec3(0.));
+  Surface ball = sdSphere(p, 0.3, onFloor(vec3(0., 0., 0.)), vec3(7.0, 0.1, 0.8), vec3(0.2));
 
   Surface cubere1 = sdCubere(p, onFloor(vec3(1.2 * sin(time), 0.7, cos(time))));
   Surface cubere2 = sdCubere(p, onFloor(vec3(1.2 * -sin(time), 0.7, -cos(time))));
@@ -119,7 +121,6 @@ void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * resolution.xy) / resolution.y;
 
   vec3 lightPosition = vec3(-8, 4.0, 0);
-  vec3 backgroundColor = vec3(0.835, 1, 1);
 
   vec3 color = vec3(0);
   Ray camera = Ray(vec3(0, 1.0, 4), normalize(vec3(uv, -1)));
@@ -133,7 +134,7 @@ void main() {
 
     if (obj.distance > MAX_DIST) {
       // ray didn't hit anything
-      color += attentuation * backgroundColor;
+      color += attentuation * BACKGROUND_COLOR;
       attentuation = vec3(0.0);
     } else {
       vec3 point = ray.origin + ray.direction * obj.distance;
