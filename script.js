@@ -76,9 +76,13 @@ async function init() {
 
     render()
 
-    if (window.location.hostname === '0.0.0.0') {
+    if (is_localhost(window.location.hostname)) {
         connect_websocket()
     }
+}
+
+function is_localhost(hostname) {
+    return hostname == '0.0.0.0' || hostname == 'localhost' || hostname == '127.0.0.1';
 }
 
 function select_program(filename) {
