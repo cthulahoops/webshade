@@ -13,7 +13,7 @@ const float PRECISION = 0.001;
 const float MIN_DIST = 0.005;
 const float MAX_DIST = 100.0;
 
-const vec3 BACKGROUND_COLOR = vec3(0.4, 0.7, 1.);
+uniform vec3 BACKGROUND_COLOR; // = vec3(0.4, 0.7, 1.);
 
 struct Surface {
   float distance;

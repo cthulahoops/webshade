@@ -161,6 +161,13 @@ async function textarea_updated() {
     program = await bind_program_source(source);
 }
 
+function color_to_vec(color_string) {
+    r = parseInt("0x" + color_string.substr(1,2));
+    g = parseInt("0x" + color_string.substr(3,2));
+    b = parseInt("0x" + color_string.substr(5,2));
+    return [r / 255, g / 255, b / 255];
+}
+
 let start_time = performance.now();
 let last_time = start_time;
 let frames = 0;
@@ -186,6 +193,9 @@ function render() {
 
     resolutionUniform = gl.getUniformLocation(program, "resolution");
     gl.uniform2fv(resolutionUniform, [canvas.width, canvas.height]);
+
+    let backgroundColorUniform = gl.getUniformLocation(program, "BACKGROUND_COLOR");
+    gl.uniform3fv(backgroundColorUniform, color_to_vec(document.getElementById("background_color").value));
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
