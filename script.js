@@ -130,12 +130,6 @@ function connect_websocket() {
     };
 }
 
-function seconds() {
-    let date = new Date();
-    return date.getTime() / 1000;
-}
-
-
 async function change_fragment_shader(select) {
     let selected_program = select.selectedOptions[0].value
 
