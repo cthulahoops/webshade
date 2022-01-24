@@ -1,7 +1,5 @@
 var gl;
 var canvas;
-var buffer;
-var timeLocation;
 var program;
 
 window.onload = init;
@@ -31,7 +29,7 @@ function bind_program_source(shaderSource) {
     gl.validateProgram(program);
 
     if ( !gl.getProgramParameter(program, gl.LINK_STATUS) ) {
-        var info = gl.getProgramInfoLog(program);
+        let info = gl.getProgramInfoLog(program);
         document.getElementById("fragment_errors").textContent = info;
         return
     }
@@ -47,18 +45,13 @@ async function init() {
         select_program(anchor_text);
     }
 
-    var shaderScript;
-    var shaderSource;
-    var vertexShader;
-    var fragmentShader;
-
     canvas = document.getElementById('glscreen');
     gl = canvas.getContext('experimental-webgl');
     canvas.width  = 800;
     canvas.height = 600;
 
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    buffer = gl.createBuffer();
+    let buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(
         gl.ARRAY_BUFFER,
@@ -87,7 +80,7 @@ function is_localhost(hostname) {
 
 function select_program(filename) {
     console.log("Selecting: ", filename);
-    let select = document.getElementById("shader-selection");
+    const select = document.getElementById("shader-selection");
     for (const option of select.options) {
         if (option.text == filename) {
             option.selected = true;
@@ -183,22 +176,22 @@ function render() {
         return;
     }
 
-    let time = performance.now();
+    const time = performance.now();
 
     gl.clearColor(1.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    positionLocation = gl.getAttribLocation(program, "a_position");
+    const positionLocation = gl.getAttribLocation(program, "a_position");
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-    timeLocation = gl.getUniformLocation(program, "time");
+    const timeLocation = gl.getUniformLocation(program, "time");
     gl.uniform1f(timeLocation, (time - start_time) / 1000)
 
-    resolutionUniform = gl.getUniformLocation(program, "resolution");
+    const resolutionUniform = gl.getUniformLocation(program, "resolution");
     gl.uniform2fv(resolutionUniform, [canvas.width, canvas.height]);
 
-    let backgroundColorUniform = gl.getUniformLocation(program, "BACKGROUND_COLOR");
+    const backgroundColorUniform = gl.getUniformLocation(program, "BACKGROUND_COLOR");
     gl.uniform3fv(backgroundColorUniform, color_to_vec(document.getElementById("background_color").value));
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
