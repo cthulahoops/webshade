@@ -105,17 +105,21 @@ function connect_websocket() {
         let filename = event.data;
         console.log("Got refresh message for: ", filename);
 
-        let select = document.getElementById("shader-selection");
-        let selected_program = select.selectedOptions[0].value
+        if (filename.endsWith(".frag")) {
+            let select = document.getElementById("shader-selection");
+            let selected_program = select.selectedOptions[0].value
 
-        if (selected_program != filename) {
-            for (const option of select.options) {
-                if (option.text == filename) {
-                    option.selected = true;
+            if (selected_program != filename) {
+                for (const option of select.options) {
+                    if (option.text == filename) {
+                        option.selected = true;
+                    }
                 }
             }
+            refresh_shader(select);
+        } else {
+            window.location.reload(true);
         }
-        refresh_shader(select);
     };
 
     socket.onclose = function(event) {
