@@ -14,6 +14,8 @@ const float MIN_DIST = 0.005;
 const float MAX_DIST = 100.0;
 
 uniform vec3 BACKGROUND_COLOR; // = vec3(0.4, 0.7, 1.);
+uniform vec3 BALL_COLOR;
+uniform vec3 BALL_REFLECTIVITY_COLOR;
 
 struct Surface {
   float distance;
@@ -75,7 +77,7 @@ vec3 onFloor(vec3 p) {
 }
 
 Surface sdScene(vec3 p) {
-  Surface ball = sdSphere(p, 0.3, onFloor(vec3(0., 0., 0.)), vec3(7.0, 0.1, 0.8), vec3(0.2));
+  Surface ball = sdSphere(p, 0.3, onFloor(vec3(0., 0., 0.)), BALL_COLOR, BALL_REFLECTIVITY_COLOR);
 
   Surface cubere1 = sdCubere(p, onFloor(vec3(1.2 * sin(time), 0.7, cos(time))));
   Surface cubere2 = sdCubere(p, onFloor(vec3(1.2 * -sin(time), 0.7, -cos(time))));

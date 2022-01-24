@@ -1,6 +1,7 @@
 <html>
 <head>
 <meta charset="utf-8"/>
+<link rel="stylesheet" href="style.css">
 <script id="2d-vertex-shader" type="x-shader/x-vertex">
 attribute vec2 a_position;
 
@@ -22,8 +23,10 @@ void main() {
         </select>
         <button onclick="refresh_shader()">Refetch code</button>
         FPS = <span id=fps></span>
-        <input id=background_color type=color>
     </div>
+    <ul id="uniforms">
+
+    </ul>
 </div>
 <div style="float: left;">
     <textarea id=shader_source cols=100 rows=30 onchange="textarea_updated()">

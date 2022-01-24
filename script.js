@@ -1,6 +1,7 @@
 var gl;
 var canvas;
 var program;
+var uniforms = [];
 
 window.onload = init;
 
@@ -11,10 +12,37 @@ function compileShader(shaderType, source) {
     return shader;
 }
 
+function add_uniform_elements(uniform_container, uniforms) {
+    while (uniform_container.lastChild) {
+        uniform_container.removeChild(uniform_container.lastChild);
+    }
+
+    for (uniform of uniforms) {
+        console.log("Color uniform: ", uniform);
+
+        let li = document.createElement('li');
+
+        let label = document.createElement('label');
+        label.textContent = uniform;
+
+        let input = document.createElement('input');
+        input.id = uniform;
+        input.type = 'color';
+
+        li.appendChild(label);
+        li.appendChild(input);
+        uniform_container.appendChild(li);
+    }
+}
+
 function bind_program_source(shaderSource) {
     let vertexShader = compileShader(
         gl.VERTEX_SHADER,
         document.getElementById("2d-vertex-shader").text);
+
+    let uniform_container = document.getElementById("uniforms");
+    uniforms = extract_uniforms(shaderSource)
+    add_uniform_elements(uniform_container, uniforms);
 
     let fragmentShader = compileShader(
         gl.FRAGMENT_SHADER,
@@ -185,8 +213,10 @@ function render() {
     const resolutionUniform = gl.getUniformLocation(program, "resolution");
     gl.uniform2fv(resolutionUniform, [canvas.width, canvas.height]);
 
-    const backgroundColorUniform = gl.getUniformLocation(program, "BACKGROUND_COLOR");
-    gl.uniform3fv(backgroundColorUniform, color_to_vec(document.getElementById("background_color").value));
+    for (const uniform of uniforms) {
+        const uniformLocation = gl.getUniformLocation(program, uniform);
+        gl.uniform3fv(uniformLocation, color_to_vec(document.getElementById(uniform).value));
+    }
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
@@ -198,4 +228,15 @@ function render() {
     }
 
     frames += 1;
+}
+
+function extract_uniforms(source) {
+    let uniforms = [];
+    for (const line of source.split("\n")) {
+        if (line.startsWith('uniform vec3')) {
+            let uniformName = line.split(';')[0].split(' ')[2]
+            uniforms.push(uniformName);
+        }
+    }
+    return uniforms;
 }

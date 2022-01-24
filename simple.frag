@@ -7,8 +7,10 @@ precision mediump int;
 
 uniform vec2 resolution;
 
+uniform vec3 BACKGROUND_COLOR;
+
 void main() {
     vec2 uv = gl_FragCoord.xy / resolution;
 
-    gl_FragColor = vec4(uv.x, uv.y, 0.5, 1);
+    gl_FragColor = vec4((vec3(uv, 1.) * BACKGROUND_COLOR), 1.);
 }
