@@ -18,7 +18,7 @@ const vec3 BACKGROUND_COLOR = vec3(0.4, 0.72, 0.86);
 
 const vec3 CAMERA = vec3(0, 1.0, 2.);
 const vec3 LIGHT_POSITION = vec3(-8, 4.0, 2);
-const vec3 AMBIENT_LIGHT = 0.2 * vec3(0.05, 0.05, 0.1);
+const vec3 AMBIENT_LIGHT = vec3(0.18, 0.18, 0.2);
 
 struct Surface {
   float distance;
@@ -88,15 +88,15 @@ float sdCone(vec3 p, float r, float h, vec3 offset) {
 }
 
 float sdPawn(vec3 p, float r, vec3 offset) {
-  float a = intersectionSDF(sdCone(p, 0.3, 0.3, offset), sdCuboid(p, vec3(0.5, 0.3, 0.5), vec3(0.,0.,0.)));
-  float b = sdSphere(p, 0.05, vec3(0., 0.35, 0.));
+  float a = sdCone(p, 0.2, 1.1, offset);
+  float b = sdSphere(p, 0.15, offset + vec3(0., 0.78, 0.));
   return sminSDF(a, b);
 }
 
 float sdMirror(vec3 p, vec3 offset) {
   return differenceSDF(
     sdCube(p, 1., offset),
-    sdSphere(p, 1.0, offset + vec3(0., 0., 1.7))
+    sdSphere(p, 1.15, offset + vec3(0., 0., 1.7))
   );
 }
 
@@ -130,14 +130,14 @@ vec3 onFloor(vec3 p) {
 }
 
 Surface sdScene(vec3 p) {
-  Surface cube = Surface(sdCube(p, 1.0, vec3(2.0, 1.0, -2.0)), vec3(1.,0.,0.), vec3(0.0));
+  Surface cube = Surface(sdCube(p, 1.0, vec3(2.0, 1.0, -2.0)), vec3(1.,0.2,0.2), vec3(0.0));
 
   Surface cylinder = Surface(sdCylinder(p, 0.4, 0.7, vec3(-2.0, 0.7, -2.0)), vec3(0.,1.,0.), vec3(0.2));
 
   Surface cone = Surface(sdCone(p, 0.5, 0.8, vec3(-1., 0.0, -1.)), vec3(0.9,0.3,0.9), vec3(0.1));
   Surface floor = sdFloor(p, vec3(0.5));
 
-  /* Surface pawn = Surface(sdPawn(p, 2., vec3(0.0, 0.5, 0.0)), vec3(0.8), vec3(0.2)); */
+  Surface pawn = Surface(sdPawn(p, 2., vec3(0.0, 0.0, -1.3)), vec3(0.8), vec3(0.2));
 
   Surface mirror = Surface(sdMirror(p, vec3(0.0,1.0, -3.)), vec3(0.,0.,0.), vec3(0.8));
 
@@ -146,7 +146,7 @@ Surface sdScene(vec3 p) {
   scene = minSurface(floor, cube);
   scene = minSurface(cylinder, scene);
   scene = minSurface(cone, scene);
-  /* scene = minSurface(pawn, scene); */
+  scene = minSurface(pawn, scene);
   scene = minSurface(mirror, scene);
   return scene;
 }
