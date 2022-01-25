@@ -6,7 +6,6 @@
 precision mediump int;
 
 uniform vec2 resolution;
-uniform float time;
 
 const int MAX_MARCHING_STEPS = 255;
 const int MAX_REFLECTION_STEPS = 3;

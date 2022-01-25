@@ -200,9 +200,6 @@ function render() {
 
     const time = performance.now();
 
-    gl.clearColor(1.0, 0.0, 0.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
     const positionLocation = gl.getAttribLocation(program, "a_position");
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
@@ -218,7 +215,11 @@ function render() {
         gl.uniform3fv(uniformLocation, color_to_vec(document.getElementById(uniform).value));
     }
 
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    if (frames % 4 == 0) {
+        gl.clearColor(1.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
 
     if (frames >= 100) {
         document.getElementById("fps").textContent = Math.round(1000 * frames / (time - last_time));
