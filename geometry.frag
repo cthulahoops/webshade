@@ -6,6 +6,7 @@
 precision mediump int;
 
 uniform vec2 resolution;
+uniform float time;
 
 const int MAX_MARCHING_STEPS = 255;
 const int MAX_REFLECTION_STEPS = 3;
@@ -16,7 +17,7 @@ const float MAX_DIST = 50.0;
 const vec3 BACKGROUND_COLOR = vec3(0.4, 0.72, 0.86);
 
 const vec3 CAMERA = vec3(0, 1.0, 2.);
-const vec3 LIGHT_POSITION = vec3(-8, 4.0, 2);
+/* const vec3 LIGHT_POSITION = vec3(-8, 4.0, 2); */
 const vec3 AMBIENT_LIGHT = vec3(0.18, 0.18, 0.2);
 
 struct Surface {
@@ -181,10 +182,8 @@ vec3 calcNormal(vec3 p)
   return normalize(n);
 }
 
-void main() {
-  vec2 uv = (gl_FragCoord.xy - 0.5 * resolution.xy) / resolution.y;
 
-
+vec3 pixel_color(vec2 uv) {
   vec3 color = vec3(0);
   Ray camera = Ray(CAMERA, normalize(vec3(uv, -1)));
 
@@ -202,6 +201,7 @@ void main() {
     } else {
       vec3 point = ray.origin + ray.direction * obj.distance;
       vec3 normal = calcNormal(point);
+      vec3 LIGHT_POSITION = 10.0 * vec3(-8. * sin(0.2 * time), 6.0, 8. * cos(0.2 * time));
       vec3 lightDirection = normalize(LIGHT_POSITION - point);
 
       ray = Ray(point, reflect(ray.direction, normal));
@@ -218,6 +218,14 @@ void main() {
       attentuation *= obj.reflectance;
     }
   }
+  return color;
+}
+
+vec2 get_uv(vec4 fragCoord) {
+  return (fragCoord.xy - 0.5 * resolution.xy) / resolution.y;
+}
+void main() {
+  vec3 color = pixel_color(get_uv(gl_FragCoord));
 
   gl_FragColor = vec4(color, 1.);
 }
