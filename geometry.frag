@@ -31,45 +31,45 @@ struct Ray {
   vec3 direction;
 };
 
-float differenceSDF(float a, float b) {
+float difference_sdf(float a, float b) {
   return max(a, -b);
 }
 
-float intersectionSDF(float a, float b) {
+float intersection_sdf(float a, float b) {
     return max(a, b);
 }
 
-float unionSDF(float a, float b) {
+float union_sdf(float a, float b) {
     return min(a, b);
 }
 
-float sminSDF(float a, float b)
+float smin_sdf(float a, float b)
 {
   float k = 32.0;
   float res = exp(-k*a) + exp(-k*b);
   return -log(max(0.0001,res)) / k;
 }
 
-float sdSphere(vec3 p, float r, vec3 offset)
+float sd_sphere(vec3 p, float r, vec3 offset)
 {
   return length(p - offset) - r;
 }
 
-float sdCube(vec3 p, float b, vec3 offset) {
+float sd_cube(vec3 p, float b, vec3 offset) {
   p = p - offset;
   vec3 q = abs(p) - b;
   return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)), 0.0);
 }
 
-float sdCuboid(vec3 p, vec3 b, vec3 offset) {
+float sd_cuboid(vec3 p, vec3 b, vec3 offset) {
   p = p - offset;
   vec3 q = abs(p) - b;
   return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)), 0.0);
 }
 
 
-float sdCylinder(vec3 p, float r, float h, vec3 offset) {
-  return max(length(p.xz - offset.xz) - r, sdCuboid(p, vec3(r, h, r), offset));
+float sd_cylinder(vec3 p, float r, float h, vec3 offset) {
+  return max(length(p.xz - offset.xz) - r, sd_cuboid(p, vec3(r, h, r), offset));
 }
 
 float point_distance(vec2 p0, vec2 p1, vec2 p2) {
@@ -78,36 +78,36 @@ float point_distance(vec2 p0, vec2 p1, vec2 p2) {
   return a / b;
 }
 
-float sdCone(vec3 p, float r, float h, vec3 offset) {
-  float cube = sdCuboid(p, vec3(r, h / 2.0, r), offset + vec3(0., h/2., 0.));
+float sd_cone(vec3 p, float r, float h, vec3 offset) {
+  float cube = sd_cuboid(p, vec3(r, h / 2.0, r), offset + vec3(0., h/2., 0.));
   p = p - offset;
   float x = length(p.xz);
 
   float cone = point_distance(vec2(x, p.y), vec2(r, 0.), vec2(0., h));
-  return intersectionSDF(cone, cube);
+  return intersection_sdf(cone, cube);
 }
 
-float sdPawn(vec3 p, float r, vec3 offset) {
-  float a = sdCone(p, 0.2, 1.1, offset);
-  float b = sdSphere(p, 0.15, offset + vec3(0., 0.78, 0.));
-  return sminSDF(a, b);
+float sd_pawn(vec3 p, float r, vec3 offset) {
+  float a = sd_cone(p, 0.2, 1.1, offset);
+  float b = sd_sphere(p, 0.15, offset + vec3(0., 0.78, 0.));
+  return smin_sdf(a, b);
 }
 
-float sdMirror(vec3 p, vec3 offset) {
-  return differenceSDF(
-    sdCube(p, 1., offset),
-    sdSphere(p, 1.15, offset + vec3(0., 0., 1.7))
+float sd_mirror(vec3 p, vec3 offset) {
+  return difference_sdf(
+    sd_cube(p, 1., offset),
+    sd_sphere(p, 1.15, offset + vec3(0., 0., 1.7))
   );
 }
 
-Surface minSurface(Surface a, Surface b) {
+Surface min_surface(Surface a, Surface b) {
   if (a.distance < b.distance) {
      return a;
   }
   return b;
 }
 
-Surface maxSurface(Surface a, Surface b) {
+Surface max_surface(Surface a, Surface b) {
   if (a.distance > b.distance) {
      return a;
   }
@@ -115,49 +115,52 @@ Surface maxSurface(Surface a, Surface b) {
 }
 
 
-float floorHeight(vec3 p) {
+float floor_height(vec3 p) {
   return 0.0;
 }
 
-Surface sdFloor(vec3 p, vec3 color) {
+Surface sd_floor(vec3 p, vec3 color) {
   float tile = mod(floor(p.x) + floor(p.z), 2.0);
   vec3 reflectance = vec3(0.);
-  return Surface(p.y - floorHeight(p), (0.5 + 0.5 * tile) * color, tile * vec3(0.8));
+  return Surface(p.y - floor_height(p), (0.5 + 0.5 * tile) * color, tile * vec3(0.8));
 }
 
-vec3 onFloor(vec3 p) {
-  return vec3(p.x, floorHeight(p) + p.y, p.z);
+vec3 on_floor(vec3 p) {
+  return vec3(p.x, floor_height(p) + p.y, p.z);
 }
 
-Surface sdScene(vec3 p) {
-  Surface cube = Surface(sdCube(p, 1.0, vec3(2.0, 1.0, -2.0)), vec3(1.,0.2,0.2), vec3(0.0));
+Surface sd_scene(vec3 p) {
+  Surface cube = Surface(sd_cube(p, 1.0, vec3(2.0, 1.0, -2.0)), vec3(1.,0.2,0.2), vec3(0.0));
 
-  Surface cylinder = Surface(sdCylinder(p, 0.4, 0.7, vec3(-2.0, 0.7, -2.0)), vec3(0.,1.,0.), vec3(0.2));
+  Surface cylinder = Surface(sd_cylinder(p, 0.4, 0.7, vec3(-2.0, 0.7, -2.0)), vec3(0.,1.,0.), vec3(0.2));
 
-  Surface cone = Surface(sdCone(p, 0.5, 0.8, vec3(-1., 0.0, -1.)), vec3(0.9,0.3,0.9), vec3(0.1));
-  Surface floor = sdFloor(p, vec3(0.5));
+  Surface cone = Surface(sd_cone(p, 0.5, 0.8, vec3(-1., 0.0, -1.)), vec3(0.9,0.3,0.9), vec3(0.1));
+  Surface floor = sd_floor(p, vec3(0.5));
 
-  Surface pawn = Surface(sdPawn(p, 2., vec3(0.0, 0.0, -1.3)), vec3(0.8), vec3(0.2));
+  Surface pawn = Surface(sd_pawn(p, 2., vec3(0.0, 0.0, -1.3)), vec3(0.8), vec3(0.2));
 
-  Surface mirror = Surface(sdMirror(p, vec3(0.0,1.0, -3.)), vec3(0.,0.,0.), vec3(0.8));
+  Surface mirror = Surface(sd_mirror(p, vec3(0.0,1.0, -3.)), vec3(0.,0.,0.), vec3(0.8));
+
+  Surface ball = Surface(sd_sphere(p, 0.2, vec3(1., 0.2, -0.5)), vec3(0.0,0.0,1.0), vec3(0.));
 
   Surface scene;
 
-  scene = minSurface(floor, cube);
-  scene = minSurface(cylinder, scene);
-  scene = minSurface(cone, scene);
-  scene = minSurface(pawn, scene);
-  scene = minSurface(mirror, scene);
+  scene = min_surface(floor, cube);
+  scene = min_surface(ball, scene);
+  scene = min_surface(cylinder, scene);
+  scene = min_surface(cone, scene);
+  scene = min_surface(pawn, scene);
+  scene = min_surface(mirror, scene);
   return scene;
 }
 
-Surface rayMarch(Ray ray, float start, float end) {
+Surface ray_march(Ray ray, float start, float end) {
   float depth = start;
   Surface co;
 
   for (int i = 0; i < MAX_MARCHING_STEPS; i++) {
     vec3 p = ray.origin + depth * ray.direction;
-    co = sdScene(p);
+    co = sd_scene(p);
     depth += co.distance;
     if (co.distance < PRECISION || depth > end) break;
   }
@@ -166,17 +169,17 @@ Surface rayMarch(Ray ray, float start, float end) {
   return co;
 }
 
-vec3 calcNormal(vec3 p)
+vec3 calc_normal(vec3 p)
 {
-  float d = sdScene(p).distance; //very close to 0
+  float d = sd_scene(p).distance; //very close to 0
  
   vec2 e = vec2(.01, 0.0);
  
   vec3 n = vec3
   (
-       d - sdScene(p - e.xyy).distance,
-       d - sdScene(p - e.yxy).distance,
-       d - sdScene(p - e.yyx).distance
+       d - sd_scene(p - e.xyy).distance,
+       d - sd_scene(p - e.yxy).distance,
+       d - sd_scene(p - e.yyx).distance
   );
  
   return normalize(n);
@@ -192,7 +195,7 @@ vec3 pixel_color(vec2 uv) {
   vec3 attentuation = vec3(1.0);
 
   for(int i=0; i<MAX_REFLECTION_STEPS; i++) {
-    obj = rayMarch(ray, MIN_DIST, MAX_DIST);
+    obj = ray_march(ray, MIN_DIST, MAX_DIST);
 
     if (obj.distance > MAX_DIST) {
       // ray didn't hit anything
@@ -200,21 +203,26 @@ vec3 pixel_color(vec2 uv) {
       attentuation = vec3(0.0);
     } else {
       vec3 point = ray.origin + ray.direction * obj.distance;
-      vec3 normal = calcNormal(point);
-      vec3 LIGHT_POSITION = 10.0 * vec3(-8. * sin(0.2 * time), 6.0, 8. * cos(0.2 * time));
-      vec3 lightDirection = normalize(LIGHT_POSITION - point);
+      vec3 normal = calc_normal(point);
+      vec3 LIGHT_POSITION = 10.0 * vec3(8.0 * cos(0.4 * time), 3, -8.0 * sin(0.4 * time));
+      vec3 light_direction = normalize(LIGHT_POSITION - point);
+
+      vec3 spec = specular(ray, normal, light_direction);
+
+      // Comput shadows:
+      Surface source = ray_march(Ray(point, light_direction), MIN_DIST, MAX_DIST);
+      float shadow = float(source.distance > MAX_DIST);
+
+      float diffuse = clamp(dot(normal, light_direction), 0.0, 1.);
+
+
+      //vec3 albedo = 0.5 * (vec3(1.) - obj.reflectance) * (shadow * diffuse + AMBIENT_LIGHT) * obj.color ;// + specular(ray, normal, light_direction);
+
+      vec3 albedo = (shadow * diffuse + AMBIENT_LIGHT) * obj.color + spec * shadow;
+
+      color += attentuation * albedo;
 
       ray = Ray(point, reflect(ray.direction, normal));
-
-      Surface source = rayMarch(Ray(point, lightDirection), MIN_DIST, MAX_DIST);
-      float diffuse;
-      if (source.distance > MAX_DIST) {
-        diffuse = clamp(dot(normal, lightDirection), 0.3, 1.);
-      } else {
-        diffuse = 0.;
-      }
-
-      color += attentuation * (vec3(1.) - obj.reflectance) * (diffuse + AMBIENT_LIGHT) * obj.color;
       attentuation *= obj.reflectance;
     }
   }
