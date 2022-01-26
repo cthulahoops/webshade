@@ -58,10 +58,10 @@ function bind_program_source(shaderSource) {
 
     if ( !gl.getProgramParameter(program, gl.LINK_STATUS) ) {
         let info = gl.getProgramInfoLog(program);
-        document.getElementById("fragment_errors").textContent = info;
+        document.getElementById("errors").textContent = info;
         return
     }
-    document.getElementById("fragment_errors").textContent = "";
+    document.getElementById("errors").textContent = "";
 
     gl.useProgram(program);
     return program;

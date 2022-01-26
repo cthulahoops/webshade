@@ -13,29 +13,31 @@ void main() {
 </head>
 
 <body>
-<div style="float: left;">
-    <canvas id="glscreen"></canvas>
-    <div>
-        <select id="shader-selection" onchange="change_fragment_shader(this)">
-            <option>cone.frag</option>
-            <option>geometry.frag</option>
-            <option>marching.frag</option>
-            <option>manyspheres.frag</option>
-            <option>mixing.frag</option>
-            <option>simple.frag</option>
-        </select>
-        <button onclick="refresh_shader()">Refetch code</button>
-        FPS = <span id=fps></span>
-    </div>
-    <ul id="uniforms">
+<div class=grid_container>
+    <div class="canvas">
+        <canvas id="glscreen"></canvas>
+        <div>
+            <select id="shader-selection" onchange="change_fragment_shader(this)">
+                <option>cone.frag</option>
+                <option>geometry.frag</option>
+                <option>marching.frag</option>
+                <option>manyspheres.frag</option>
+                <option>mixing.frag</option>
+                <option>simple.frag</option>
+            </select>
+            <button onclick="refresh_shader()">Refetch code</button>
+            FPS = <span id=fps></span>
+        </div>
+        <ul id="uniforms">
 
-    </ul>
-</div>
-<div style="float: left;">
-    <textarea id=shader_source cols=100 rows=30 onchange="textarea_updated()">
-    </textarea>
-</div>
-<div id="fragment_errors">
+        </ul>
+    </div>
+    <div class="source">
+        <textarea id=shader_source cols=100 rows=30 onchange="textarea_updated()">
+        </textarea>
+    </div>
+    <div id="errors">
+    </div>
 </div>
 </body>
 </html>
