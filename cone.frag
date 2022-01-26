@@ -17,6 +17,10 @@ float intersectionSDF(float a, float b) {
     return max(a, b);
 }
 
+float unionSDF(float a, float b) {
+    return min(a, b);
+}
+
 float point_distance(vec2 p0, vec2 p1, vec2 p2) {
   float a = (p2.x - p1.x) * (p1.y - p0.y) - (p1.x - p0.x) * (p2.y - p1.y);
   float b = length(p2 - p1);
@@ -38,9 +42,27 @@ float zero(float x) {
 }
 
 void main() {
-    vec2 uv = (gl_FragCoord.xy - 0.5 * resolution.xy) / resolution.y;
+    vec2 res = resolution / 2.0;
+    vec2 uv = (mod(gl_FragCoord.xy, res.xy) - 0.5 * res.xy) / res.y;
 
-    float cone = sdCone(vec3(uv, 0.), 0.3, 0.6, vec3(0., -0.3, 0.));
+    vec3 p;
+
+    if (gl_FragCoord.x < res.x && gl_FragCoord.y > res.y) {
+      p = vec3(uv, 0.);
+    }
+    else if (gl_FragCoord.x >= res.x && gl_FragCoord.y > res.y) {
+      p = vec3(0., uv.y, uv.x);
+    } else if (gl_FragCoord.x < res.x && gl_FragCoord.y < res.y) {
+      p = vec3(uv.x, 0.0, uv.y);
+    } else {
+      p = vec3(0.1, 0.1, 0.1);
+    }
+
+    float cone = unionSDF(
+      sdCone(p, 0.3, 0.6, vec3(0.2, -0.3, 0.1)),
+      sdCone(p, 0.3, 0.6, vec3(0., -0.3, 0.))
+    );
+
     float grid = max(zero(mod(uv.x, 0.1)), zero(mod(uv.y, 0.1)));
     gl_FragColor = vec4(grid, 0.2 * step(cone, 0.), zero(mod(cone, 0.1)), 1.);
 }
