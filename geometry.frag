@@ -185,6 +185,13 @@ vec3 calc_normal(vec3 p)
   return normalize(n);
 }
 
+vec3 specular(Ray ray, vec3 normal, vec3 light_direction) {
+    float specular_strength = 0.8;
+    vec3 specular_color = vec3(1., 1., 1.);
+    vec3 reflect_dir = reflect(-light_direction, normal);
+    float spec = pow(max(dot(-ray.direction, reflect_dir), 0.0), 32.);
+    return specular_strength * spec * specular_color;
+}
 
 vec3 pixel_color(vec2 uv) {
   vec3 color = vec3(0);
