@@ -9,7 +9,7 @@ uniform vec2 resolution;
 uniform float time;
 
 const int MAX_MARCHING_STEPS = 255;
-const int MAX_REFLECTION_STEPS = 3;
+const int MAX_REFLECTION_STEPS = 5;
 const float PRECISION = 0.0001;
 const float MIN_DIST = 0.0005;
 const float MAX_DIST = 50.0;
@@ -207,7 +207,7 @@ vec3 pixel_color(vec2 uv) {
     if (obj.distance > MAX_DIST) {
       // ray didn't hit anything
       color += attentuation * BACKGROUND_COLOR;
-      attentuation = vec3(0.0);
+      break;
     } else {
       vec3 point = ray.origin + ray.direction * obj.distance;
       vec3 normal = calc_normal(point);
