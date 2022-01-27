@@ -9,7 +9,7 @@ void main() {
     gl_Position = vec4(a_position, 0, 1);
 }
 </script>
-<script type="text/javascript" src="script.js"></script>
+<script type="module" src="main.js"></script>
 </head>
 
 <body>
@@ -17,7 +17,7 @@ void main() {
     <div class="canvas">
         <canvas id="glscreen"></canvas>
         <div>
-            <select id="shader-selection" onchange="change_fragment_shader(this)">
+            <select id="shader-selection" onchange="changeFragmentShader(this)">
                 <option>cone.frag</option>
                 <option>geometry.frag</option>
                 <option>marching.frag</option>
@@ -25,7 +25,7 @@ void main() {
                 <option>mixing.frag</option>
                 <option>simple.frag</option>
             </select>
-            <button onclick="refresh_shader()">Refetch code</button>
+            <button onclick="refetchCode()">Refetch code</button>
             FPS = <span id=fps></span>
         </div>
         <ul id="uniforms">
@@ -33,7 +33,7 @@ void main() {
         </ul>
     </div>
     <div class="source">
-        <textarea id=shader_source cols=100 rows=30 onchange="textarea_updated()">
+        <textarea id=shader_source cols=100 rows=30 onchange="textareaUpdated()">
         </textarea>
     </div>
     <div id="errors">

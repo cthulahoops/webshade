@@ -149,24 +149,24 @@ Surface sd_scene(vec3 p) {
   scene = min_surface(ball, scene);
   scene = min_surface(cylinder, scene);
   scene = min_surface(cone, scene);
-  scene = min_surface(pawn, scene);
+  scene = min_surface(scene, pawn);
   scene = min_surface(mirror, scene);
   return scene;
 }
 
 Surface ray_march(Ray ray, float start, float end) {
   float depth = start;
-  Surface co;
+  Surface closest_object;
 
   for (int i = 0; i < MAX_MARCHING_STEPS; i++) {
-    vec3 p = ray.origin + depth * ray.direction;
-    co = sd_scene(p);
-    depth += co.distance;
-    if (co.distance < PRECISION || depth > end) break;
+    vec3 point = ray.origin + depth * ray.direction;
+    closest_object = sd_scene(point);
+    depth += closest_object.distance;
+    if (closest_object.distance < PRECISION || depth > end) break;
   }
   
-  co.distance = depth;
-  return co;
+  closest_object.distance = depth;
+  return closest_object;
 }
 
 vec3 calc_normal(vec3 p)

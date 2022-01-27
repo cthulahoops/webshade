@@ -137,7 +137,7 @@ function connectWebsocket () {
           }
         }
       }
-      refreshShader(select)
+      refetchCode(select)
     } else {
       window.location.reload(true)
     }
@@ -170,7 +170,7 @@ async function changeFragmentShader (select) {
   program = await bindProgramSource(shaderSource)
 }
 
-async function refreshShader () {
+async function refetchCode () {
   await changeFragmentShader(document.getElementById('shader-selection'))
 }
 
@@ -241,3 +241,7 @@ function extractUniforms (source) {
   }
   return uniforms
 }
+
+window.changeFragmentShader = changeFragmentShader
+window.refetchCode = refetchCode
+window.textareaUpdated = textareaUpdated
