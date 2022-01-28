@@ -1,3 +1,5 @@
+#version 100
+
 #ifdef GL_FRAGMENT_PRECISION_HIGH
   precision highp float;
 #else
@@ -16,7 +18,7 @@ const float MAX_DIST = 50.0;
 
 const vec3 BACKGROUND_COLOR = vec3(0.4, 0.72, 0.86);
 
-const vec3 CAMERA = vec3(0, 1.0, 2.);
+const vec3 CAMERA = vec3(0, 1, 2);
 /* const vec3 LIGHT_POSITION = vec3(-8, 4.0, 2); */
 const vec3 AMBIENT_LIGHT = vec3(0.18, 0.18, 0.2);
 
@@ -242,5 +244,5 @@ vec2 get_uv(vec4 fragCoord) {
 void main() {
   vec3 color = pixel_color(get_uv(gl_FragCoord));
 
-  gl_FragColor = vec4(color, 1.);
+  gl_FragColor = vec4(color, 1);
 }
