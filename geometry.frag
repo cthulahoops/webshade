@@ -202,6 +202,7 @@ vec3 pixel_color(vec2 uv) {
   Ray ray = camera;
   Surface obj;
   vec3 attentuation = vec3(1.0);
+  vec3 LIGHT_POSITION = 10.0 * vec3(8.0 * cos(0.4 * time), 8.0, -8.0 * sin(0.4 * time));
 
   for(int i=0; i<MAX_REFLECTION_STEPS; i++) {
     obj = ray_march(ray, MIN_DIST, MAX_DIST);
@@ -213,7 +214,6 @@ vec3 pixel_color(vec2 uv) {
     } else {
       vec3 point = ray.origin + ray.direction * obj.distance;
       vec3 normal = calc_normal(point);
-      vec3 LIGHT_POSITION = 10.0 * vec3(8.0 * cos(0.4 * time), 3, -8.0 * sin(0.4 * time));
       vec3 light_direction = normalize(LIGHT_POSITION - point);
 
       vec3 spec = specular(ray, normal, light_direction);
