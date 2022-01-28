@@ -22,10 +22,14 @@ const vec3 CAMERA = vec3(0, 1, 2);
 /* const vec3 LIGHT_POSITION = vec3(-8, 4.0, 2); */
 const vec3 AMBIENT_LIGHT = vec3(0.18, 0.18, 0.2);
 
-struct Surface {
-  float distance;
+struct Material {
   vec3 color;
   vec3 reflectance;
+};
+
+struct Surface {
+  float distance;
+  Material material;
 };
 
 struct Ray {
@@ -124,7 +128,7 @@ float floor_height(vec3 p) {
 Surface sd_floor(vec3 p, vec3 color) {
   float tile = mod(floor(p.x) + floor(p.z), 2.0);
   vec3 reflectance = vec3(0.);
-  return Surface(p.y - floor_height(p), (0.5 + 0.5 * tile) * color, tile * vec3(0.8));
+  return Surface(p.y - floor_height(p), Material((0.5 + 0.5 * tile) * color, tile * vec3(0.8)));
 }
 
 vec3 on_floor(vec3 p) {
@@ -132,18 +136,31 @@ vec3 on_floor(vec3 p) {
 }
 
 Surface sd_scene(vec3 p) {
-  Surface cube = Surface(sd_cube(p, 1.0, vec3(2.0, 1.0, -2.0)), vec3(1.,0.2,0.2), vec3(0.0));
+  Surface cube = Surface(
+      sd_cube(p, 1.0, vec3(2.0, 1.0, -2.0)),
+      Material(vec3(1.,0.2,0.2), vec3(0.0)));
 
-  Surface cylinder = Surface(sd_cylinder(p, 0.4, 0.7, vec3(-2.0, 0.7, -2.0)), vec3(0.,1.,0.), vec3(0.2));
+  Surface cylinder = Surface(
+      sd_cylinder(p, 0.4, 0.7, vec3(-2.0, 0.7, -2.0)),
+      Material(vec3(0,1.,0), vec3(0.2)));
 
-  Surface cone = Surface(sd_cone(p, 0.5, 0.8, vec3(-1., 0.0, -1.)), vec3(0.9,0.3,0.9), vec3(0.1));
+  Surface cone = Surface(
+      sd_cone(p, 0.5, 0.8, vec3(-1., 0.0, -1.)),
+      Material(vec3(0.9,0.3,0.9), vec3(0.1)));
+
   Surface floor = sd_floor(p, vec3(0.5));
 
-  Surface pawn = Surface(sd_pawn(p, 2., vec3(0.0, 0.0, -1.3)), vec3(0.8), vec3(0.2));
+  Surface pawn = Surface(
+      sd_pawn(p, 2., vec3(0.0, 0.0, -1.3)),
+      Material(vec3(0.8), vec3(0.2)));
 
-  Surface mirror = Surface(sd_mirror(p, vec3(0.0,1.0, -3.)), vec3(0.,0.,0.), vec3(0.8));
+  Surface mirror = Surface(
+      sd_mirror(p, vec3(0.0,1.0, -3.)),
+      Material(vec3(0.,0.,0.), vec3(0.8)));
 
-  Surface ball = Surface(sd_sphere(p, 0.2, vec3(1., 0.2, -0.5)), vec3(0.0,0.0,1.0), vec3(0.));
+  Surface ball = Surface(
+      sd_sphere(p, 0.2, vec3(1., 0.2, -0.5)),
+      Material(vec3(0.0,0.0,1.0), vec3(0.)));
 
   Surface scene;
 
@@ -224,15 +241,12 @@ vec3 pixel_color(vec2 uv) {
 
       float diffuse = clamp(dot(normal, light_direction), 0.0, 1.);
 
-
-      //vec3 albedo = 0.5 * (vec3(1.) - obj.reflectance) * (shadow * diffuse + AMBIENT_LIGHT) * obj.color ;// + specular(ray, normal, light_direction);
-
-      vec3 albedo = (shadow * diffuse + AMBIENT_LIGHT) * obj.color + spec * shadow;
+      vec3 albedo = (shadow * diffuse + AMBIENT_LIGHT) * obj.material.color + spec * shadow;
 
       color += attentuation * albedo;
 
       ray = Ray(point, reflect(ray.direction, normal));
-      attentuation *= obj.reflectance;
+      attentuation *= obj.material.reflectance;
     }
   }
   return color;
@@ -241,8 +255,8 @@ vec3 pixel_color(vec2 uv) {
 vec2 get_uv(vec4 fragCoord) {
   return (fragCoord.xy - 0.5 * resolution.xy) / resolution.y;
 }
+
 void main() {
   vec3 color = pixel_color(get_uv(gl_FragCoord));
-
   gl_FragColor = vec4(color, 1);
 }
