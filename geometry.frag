@@ -19,7 +19,7 @@ const float MAX_DIST = 50.0;
 const vec3 BACKGROUND_COLOR = vec3(0.1, 0.05, 0.02);
 
 const vec3 CAMERA = vec3(0, 1, 2);
-const vec3 AMBIENT_LIGHT = vec3(0.18, 0.18, 0.2);
+const vec3 AMBIENT_LIGHT = 0.2 * vec3(0.18, 0.18, 0.2);
 
 struct Material {
   vec3 color;
@@ -285,7 +285,11 @@ vec2 get_uv(vec4 fragCoord) {
   return (fragCoord.xy - 0.5 * resolution.xy) / resolution.y;
 }
 
+vec3 gamma_correction(vec3 color, float gamma) {
+  return pow(color, vec3(1./gamma));
+}
+
 void main() {
   vec3 color = pixel_color(get_uv(gl_FragCoord));
-  gl_FragColor = vec4(color, 1);
+  gl_FragColor = vec4(gamma_correction(color, 0.8), 1);
 }
