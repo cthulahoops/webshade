@@ -16,15 +16,15 @@ const float PRECISION = 0.0001;
 const float MIN_DIST = 0.0005;
 const float MAX_DIST = 50.0;
 
-const vec3 BACKGROUND_COLOR = vec3(0.4, 0.72, 0.86);
+const vec3 BACKGROUND_COLOR = vec3(0.1, 0.05, 0.02);
 
 const vec3 CAMERA = vec3(0, 1, 2);
-/* const vec3 LIGHT_POSITION = vec3(-8, 4.0, 2); */
 const vec3 AMBIENT_LIGHT = vec3(0.18, 0.18, 0.2);
 
 struct Material {
   vec3 color;
   vec3 reflectance;
+  vec3 emitance;
 };
 
 struct Surface {
@@ -36,6 +36,14 @@ struct Ray {
   vec3 origin;
   vec3 direction;
 };
+
+struct Light {
+  vec3 position;
+  vec3 color;
+};
+
+const Light LIGHT1 = Light( vec3(1.2, 1.8, -0.5), vec3(0.8, 0.8, 0.6) );
+const Light LIGHT2 = Light( vec3(-1.2, 1.8, -0.5), vec3(0.6, 0.8, 0.8) );
 
 float difference_sdf(float a, float b) {
   return max(a, -b);
@@ -128,7 +136,7 @@ float floor_height(vec3 p) {
 Surface sd_floor(vec3 p, vec3 color) {
   float tile = mod(floor(p.x) + floor(p.z), 2.0);
   vec3 reflectance = vec3(0.);
-  return Surface(p.y - floor_height(p), Material((0.5 + 0.5 * tile) * color, tile * vec3(0.8)));
+  return Surface(p.y - floor_height(p), Material((0.5 + 0.5 * tile) * color, tile * vec3(0.8), vec3(0)));
 }
 
 vec3 on_floor(vec3 p) {
@@ -138,34 +146,40 @@ vec3 on_floor(vec3 p) {
 Surface sd_scene(vec3 p) {
   Surface cube = Surface(
       sd_cube(p, 1.0, vec3(2.0, 1.0, -2.0)),
-      Material(vec3(1.,0.2,0.2), vec3(0.0)));
+      Material(vec3(1.,0.2,0.2), vec3(0.0), vec3(0)));
 
   Surface cylinder = Surface(
       sd_cylinder(p, 0.4, 0.7, vec3(-2.0, 0.7, -2.0)),
-      Material(vec3(0,1.,0), vec3(0.2)));
+      Material(vec3(0,1.,0), vec3(0.2), vec3(0)));
 
   Surface cone = Surface(
       sd_cone(p, 0.5, 0.8, vec3(-1., 0.0, -1.)),
-      Material(vec3(0.9,0.3,0.9), vec3(0.1)));
+      Material(vec3(0.9,0.3,0.9), vec3(0.1), vec3(0)));
 
   Surface floor = sd_floor(p, vec3(0.5));
 
   Surface pawn = Surface(
       sd_pawn(p, 2., vec3(0.0, 0.0, -1.3)),
-      Material(vec3(0.8), vec3(0.2)));
+      Material(vec3(0.8), vec3(0.2), vec3(0)));
 
   Surface mirror = Surface(
       sd_mirror(p, vec3(0.0,1.0, -3.)),
-      Material(vec3(0.,0.,0.), vec3(0.8)));
+      Material(vec3(0.,0.,0.), vec3(0.8), vec3(0)));
 
-  Surface ball = Surface(
-      sd_sphere(p, 0.2, vec3(1., 0.2, -0.5)),
-      Material(vec3(0.0,0.0,1.0), vec3(0.)));
+  Surface light1 = Surface(
+      sd_sphere(p, 0.05, LIGHT1.position),
+      Material(vec3(0), vec3(0.), LIGHT1.color));
+
+  Surface light2 = Surface(
+      sd_sphere(p, 0.05, LIGHT2.position),
+      Material(vec3(0), vec3(0.), LIGHT2.color));
+
 
   Surface scene;
 
   scene = min_surface(floor, cube);
-  scene = min_surface(ball, scene);
+  scene = min_surface(light1, scene);
+  scene = min_surface(light2, scene);
   scene = min_surface(cylinder, scene);
   scene = min_surface(cone, scene);
   scene = min_surface(scene, pawn);
@@ -204,12 +218,21 @@ vec3 calc_normal(vec3 p)
   return normalize(n);
 }
 
-vec3 specular(Ray ray, vec3 normal, vec3 light_direction) {
+vec3 specular(Ray ray, vec3 normal, vec3 light_direction, vec3 color) {
     float specular_strength = 0.8;
     vec3 specular_color = vec3(1., 1., 1.);
     vec3 reflect_dir = reflect(-light_direction, normal);
     float spec = pow(max(dot(-ray.direction, reflect_dir), 0.0), 32.);
-    return specular_strength * spec * specular_color;
+    return specular_strength * spec * color;
+}
+
+vec3 compute_light(vec3 light_direction, vec3 point) {
+  Surface source = ray_march(Ray(point, light_direction), MIN_DIST, MAX_DIST);
+  if (source.distance > MAX_DIST) {
+    return vec3(1);
+  } else {
+    return source.material.emitance;
+  }
 }
 
 vec3 pixel_color(vec2 uv) {
@@ -219,7 +242,6 @@ vec3 pixel_color(vec2 uv) {
   Ray ray = camera;
   Surface obj;
   vec3 attentuation = vec3(1.0);
-  vec3 LIGHT_POSITION = 10.0 * vec3(8.0 * cos(0.4 * time), 8.0, -8.0 * sin(0.4 * time));
 
   for(int i=0; i<MAX_REFLECTION_STEPS; i++) {
     obj = ray_march(ray, MIN_DIST, MAX_DIST);
@@ -231,19 +253,26 @@ vec3 pixel_color(vec2 uv) {
     } else {
       vec3 point = ray.origin + ray.direction * obj.distance;
       vec3 normal = calc_normal(point);
-      vec3 light_direction = normalize(LIGHT_POSITION - point);
 
-      vec3 spec = specular(ray, normal, light_direction);
+      vec3 light = vec3(0);
+      vec3 spec;
+      vec3 diffuse;
 
-      // Comput shadows:
-      Surface source = ray_march(Ray(point, light_direction), MIN_DIST, MAX_DIST);
-      float shadow = float(source.distance > MAX_DIST);
+      vec3 light_direction;
 
-      float diffuse = clamp(dot(normal, light_direction), 0.0, 1.);
+      light_direction = normalize(LIGHT1.position - point);
+      light += compute_light(light_direction, point);
+      spec += light * specular(ray, normal, light_direction, LIGHT1.color);
+      diffuse += 0.5 * LIGHT1.color * clamp(dot(normal, light_direction), 0.0, 1.);
 
-      vec3 albedo = (shadow * diffuse + AMBIENT_LIGHT) * obj.material.color + spec * shadow;
+      light_direction = normalize(LIGHT2.position - point);
+      light += compute_light(light_direction, point);
+      spec += light * specular(ray, normal, light_direction, LIGHT2.color);
+      diffuse += 0.5 * LIGHT2.color * light * clamp(dot(normal, light_direction), 0.0, 1.);
 
-      color += attentuation * albedo;
+      vec3 albedo = (diffuse + AMBIENT_LIGHT) * obj.material.color + spec;
+
+      color += attentuation * (albedo + 1.6 * obj.material.emitance);
 
       ray = Ray(point, reflect(ray.direction, normal));
       attentuation *= obj.material.reflectance;
