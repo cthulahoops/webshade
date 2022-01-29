@@ -1,11 +1,46 @@
-let gl
-let canvas
 let program
 let uniforms = []
 
 window.onload = init
 
-function compileShader (shaderType, source) {
+class ShaderCanvas {
+  constructor (canvas) {
+    this.canvas = canvas
+
+    this.gl = canvas.getContext('experimental-webgl')
+    canvas.width = 800
+    canvas.height = 600
+
+    this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight)
+    const buffer = this.gl.createBuffer()
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer)
+    this.gl.bufferData(
+      this.gl.ARRAY_BUFFER,
+      new Float32Array([
+        -1.0, -1.0,
+        1.0, -1.0,
+        -1.0, 1.0,
+        -1.0, 1.0,
+        1.0, -1.0,
+        1.0, 1.0]),
+      this.gl.STATIC_DRAW
+    )
+  }
+
+  async changeFragmentShader (select) {
+    const selectedProgram = select.selectedOptions[0].value
+
+    window.location.hash = '#' + selectedProgram
+    const shaderResponse = await window.fetch(selectedProgram)
+    const shaderSource = await shaderResponse.text()
+
+    document.getElementById('shader_source').value = shaderSource
+
+    program = await bindProgramSource(this.gl, shaderSource)
+  }
+}
+
+function compileShader (gl, shaderType, source) {
   const shader = gl.createShader(shaderType)
   gl.shaderSource(shader, source)
   gl.compileShader(shader)
@@ -35,8 +70,9 @@ function addUniformElements (uniformContainer, uniforms) {
   }
 }
 
-function bindProgramSource (shaderSource) {
+function bindProgramSource (gl, shaderSource) {
   const vertexShader = compileShader(
+    gl,
     gl.VERTEX_SHADER,
     document.getElementById('2d-vertex-shader').text)
 
@@ -45,6 +81,7 @@ function bindProgramSource (shaderSource) {
   addUniformElements(uniformContainer, uniforms)
 
   const fragmentShader = compileShader(
+    gl,
     gl.FRAGMENT_SHADER,
     shaderSource
   )
@@ -73,33 +110,18 @@ async function init () {
     selectProgram(anchorText)
   }
 
-  canvas = document.getElementById('glscreen')
-  gl = canvas.getContext('experimental-webgl')
-  canvas.width = 800
-  canvas.height = 600
+  const canvas = new ShaderCanvas(document.getElementById('glscreen'))
 
-  gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
-  const buffer = gl.createBuffer()
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-  gl.bufferData(
-    gl.ARRAY_BUFFER,
-    new Float32Array([
-      -1.0, -1.0,
-      1.0, -1.0,
-      -1.0, 1.0,
-      -1.0, 1.0,
-      1.0, -1.0,
-      1.0, 1.0]),
-    gl.STATIC_DRAW
-  )
+  await canvas.changeFragmentShader(document.getElementById('shader-selection'))
 
-  await changeFragmentShader(document.getElementById('shader-selection'))
-
-  render()
+  render(canvas)
 
   if (isLocalhost(window.location.hostname)) {
     connectWebsocket()
   }
+  window.changeFragmentShader = () => canvas.changeFragmentShader()
+  window.refetchCode = () => refetchCode(canvas)
+  window.textareaUpdated = () => textareaUpdated(canvas)
 }
 
 function isLocalhost (hostname) {
@@ -158,26 +180,14 @@ function connectWebsocket () {
   }
 }
 
-async function changeFragmentShader (select) {
-  const selectedProgram = select.selectedOptions[0].value
-
-  window.location.hash = '#' + selectedProgram
-  const shaderResponse = await window.fetch(selectedProgram)
-  const shaderSource = await shaderResponse.text()
-
-  document.getElementById('shader_source').value = shaderSource
-
-  program = await bindProgramSource(shaderSource)
+async function refetchCode (canvas) {
+  await canvas.changeFragmentShader(document.getElementById('shader-selection'))
 }
 
-async function refetchCode () {
-  await changeFragmentShader(document.getElementById('shader-selection'))
-}
-
-async function textareaUpdated () {
+async function textareaUpdated (canvas) {
   console.log('Recompiling from textarea.')
   const source = document.getElementById('shader_source').value
-  program = await bindProgramSource(source)
+  program = await bindProgramSource(canvas.gl, source)
 }
 
 function colorToVec (colorString) {
@@ -191,8 +201,10 @@ const startTime = window.performance.now()
 let lastTime = startTime
 let frames = 0
 
-function render () {
-  window.requestAnimationFrame(render, canvas)
+function render (shaderCanvas) {
+  const gl = shaderCanvas.gl
+
+  window.requestAnimationFrame(() => render(shaderCanvas), shaderCanvas.canvas)
 
   if (!program) {
     return
@@ -208,7 +220,7 @@ function render () {
   gl.uniform1f(timeLocation, (time - startTime) / 1000)
 
   const resolutionUniform = gl.getUniformLocation(program, 'resolution')
-  gl.uniform2fv(resolutionUniform, [canvas.width, canvas.height])
+  gl.uniform2fv(resolutionUniform, [shaderCanvas.canvas.width, shaderCanvas.canvas.height])
 
   for (const uniform of uniforms) {
     const uniformLocation = gl.getUniformLocation(program, uniform)
@@ -242,6 +254,3 @@ function extractUniforms (source) {
   return uniforms
 }
 
-window.changeFragmentShader = changeFragmentShader
-window.refetchCode = refetchCode
-window.textareaUpdated = textareaUpdated
