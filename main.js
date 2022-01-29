@@ -68,15 +68,17 @@ class ShaderCanvas {
     this.program = program
   }
 
+  renderLoop () {
+    window.requestAnimationFrame(() => this.renderLoop(), this.canvas)
+
+    if (this.program) {
+      this.render()
+    }
+  }
+
   render () {
     const gl = this.gl
     const program = this.program
-
-    window.requestAnimationFrame(() => this.render(), this.canvas)
-
-    if (!program) {
-      return
-    }
 
     const time = window.performance.now()
 
@@ -168,7 +170,7 @@ async function init () {
 
   await changeFragmentShader(canvas, document.getElementById('shader-selection'))
 
-  canvas.render()
+  canvas.renderLoop()
 
   window.changeFragmentShader = (select) => changeFragmentShader(canvas, select)
   window.refetchCode = () => refetchCode(canvas)
