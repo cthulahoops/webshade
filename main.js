@@ -5,6 +5,10 @@ window.onload = init
 
 class ShaderCanvas {
   constructor (canvas) {
+    this.startTime = window.performance.now()
+    this.lastTime = this.startTime
+    this.frames = 0
+
     this.canvas = canvas
 
     this.gl = canvas.getContext('experimental-webgl')
@@ -55,7 +59,7 @@ class ShaderCanvas {
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
 
     const timeLocation = gl.getUniformLocation(program, 'time')
-    gl.uniform1f(timeLocation, (time - startTime) / 1000)
+    gl.uniform1f(timeLocation, (time - this.startTime) / 1000)
 
     const resolutionUniform = gl.getUniformLocation(program, 'resolution')
     gl.uniform2fv(resolutionUniform, [this.canvas.width, this.canvas.height])
@@ -65,20 +69,20 @@ class ShaderCanvas {
       gl.uniform3fv(uniformLocation, colorToVec(document.getElementById(uniform).value))
     }
 
-    if (frames % 4 === 0) {
+    if (this.frames % 4 === 0) {
       gl.clearColor(1.0, 0.0, 0.0, 1.0)
       gl.clear(gl.COLOR_BUFFER_BIT)
       gl.drawArrays(gl.TRIANGLES, 0, 6)
     }
 
-    if (frames >= 100) {
-      document.getElementById('fps').textContent = Math.round(1000 * frames / (time - lastTime))
+    if (this.frames >= 100) {
+      document.getElementById('fps').textContent = Math.round(1000 * this.frames / (time - this.lastTime))
 
-      frames = 0
-      lastTime = time
+      this.frames = 0
+      this.lastTime = time
     }
 
-    frames += 1
+    this.frames += 1
   }
 }
 
@@ -147,6 +151,10 @@ function bindProgramSource (gl, shaderSource) {
 }
 
 async function init () {
+  if (isLocalhost(window.location.hostname)) {
+    connectWebsocket()
+  }
+
   const anchorText = window.location.hash.substr(1)
   if (anchorText) {
     selectProgram(anchorText)
@@ -158,9 +166,6 @@ async function init () {
 
   canvas.render()
 
-  if (isLocalhost(window.location.hostname)) {
-    connectWebsocket()
-  }
   window.changeFragmentShader = () => canvas.changeFragmentShader()
   window.refetchCode = () => refetchCode(canvas)
   window.textareaUpdated = () => textareaUpdated(canvas)
@@ -239,11 +244,6 @@ function colorToVec (colorString) {
   return [r / 255, g / 255, b / 255]
 }
 
-const startTime = window.performance.now()
-let lastTime = startTime
-let frames = 0
-
-
 function extractUniforms (source) {
   const uniforms = []
   for (const line of source.split('\n')) {
@@ -254,4 +254,3 @@ function extractUniforms (source) {
   }
   return uniforms
 }
-
