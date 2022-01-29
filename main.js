@@ -38,6 +38,48 @@ class ShaderCanvas {
 
     program = await bindProgramSource(this.gl, shaderSource)
   }
+
+  render () {
+    const gl = this.gl
+
+    window.requestAnimationFrame(() => this.render(), this.canvas)
+
+    if (!program) {
+      return
+    }
+
+    const time = window.performance.now()
+
+    const positionLocation = gl.getAttribLocation(program, 'a_position')
+    gl.enableVertexAttribArray(positionLocation)
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
+
+    const timeLocation = gl.getUniformLocation(program, 'time')
+    gl.uniform1f(timeLocation, (time - startTime) / 1000)
+
+    const resolutionUniform = gl.getUniformLocation(program, 'resolution')
+    gl.uniform2fv(resolutionUniform, [this.canvas.width, this.canvas.height])
+
+    for (const uniform of uniforms) {
+      const uniformLocation = gl.getUniformLocation(program, uniform)
+      gl.uniform3fv(uniformLocation, colorToVec(document.getElementById(uniform).value))
+    }
+
+    if (frames % 4 === 0) {
+      gl.clearColor(1.0, 0.0, 0.0, 1.0)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+    }
+
+    if (frames >= 100) {
+      document.getElementById('fps').textContent = Math.round(1000 * frames / (time - lastTime))
+
+      frames = 0
+      lastTime = time
+    }
+
+    frames += 1
+  }
 }
 
 function compileShader (gl, shaderType, source) {
@@ -114,7 +156,7 @@ async function init () {
 
   await canvas.changeFragmentShader(document.getElementById('shader-selection'))
 
-  render(canvas)
+  canvas.render()
 
   if (isLocalhost(window.location.hostname)) {
     connectWebsocket()
@@ -201,47 +243,6 @@ const startTime = window.performance.now()
 let lastTime = startTime
 let frames = 0
 
-function render (shaderCanvas) {
-  const gl = shaderCanvas.gl
-
-  window.requestAnimationFrame(() => render(shaderCanvas), shaderCanvas.canvas)
-
-  if (!program) {
-    return
-  }
-
-  const time = window.performance.now()
-
-  const positionLocation = gl.getAttribLocation(program, 'a_position')
-  gl.enableVertexAttribArray(positionLocation)
-  gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
-
-  const timeLocation = gl.getUniformLocation(program, 'time')
-  gl.uniform1f(timeLocation, (time - startTime) / 1000)
-
-  const resolutionUniform = gl.getUniformLocation(program, 'resolution')
-  gl.uniform2fv(resolutionUniform, [shaderCanvas.canvas.width, shaderCanvas.canvas.height])
-
-  for (const uniform of uniforms) {
-    const uniformLocation = gl.getUniformLocation(program, uniform)
-    gl.uniform3fv(uniformLocation, colorToVec(document.getElementById(uniform).value))
-  }
-
-  if (frames % 4 === 0) {
-    gl.clearColor(1.0, 0.0, 0.0, 1.0)
-    gl.clear(gl.COLOR_BUFFER_BIT)
-    gl.drawArrays(gl.TRIANGLES, 0, 6)
-  }
-
-  if (frames >= 100) {
-    document.getElementById('fps').textContent = Math.round(1000 * frames / (time - lastTime))
-
-    frames = 0
-    lastTime = time
-  }
-
-  frames += 1
-}
 
 function extractUniforms (source) {
   const uniforms = []
