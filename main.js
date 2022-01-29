@@ -1,5 +1,3 @@
-let uniforms = []
-
 window.onload = init
 
 class ShaderCanvas {
@@ -30,25 +28,29 @@ class ShaderCanvas {
     )
 
     this.program = null
+    this.uniforms = []
   }
 
-  async updateFragmentShader (shaderSource) {
+  compileShader (shaderType, source) {
+    const shader = this.gl.createShader(shaderType)
+    this.gl.shaderSource(shader, source)
+    this.gl.compileShader(shader)
+    return shader
+  }
+
+  updateFragmentShader (shaderSource, uniforms) {
     const gl = this.gl
 
-    const vertexShader = compileShader(
-      gl,
+    const vertexShader = this.compileShader(
       gl.VERTEX_SHADER,
       document.getElementById('2d-vertex-shader').text)
 
-    const uniformContainer = document.getElementById('uniforms')
-    uniforms = extractUniforms(shaderSource)
-    addUniformElements(uniformContainer, uniforms)
-
-    const fragmentShader = compileShader(
-      gl,
+    const fragmentShader = this.compileShader(
       gl.FRAGMENT_SHADER,
       shaderSource
     )
+
+    this.uniforms = uniforms
 
     const program = gl.createProgram()
     gl.attachShader(program, vertexShader)
@@ -72,56 +74,46 @@ class ShaderCanvas {
     window.requestAnimationFrame(() => this.renderLoop(), this.canvas)
 
     if (this.program) {
-      this.render()
+      const time = (window.performance.now() - this.startTime) / 1000
+      this.render(time)
+
+      if (this.frames >= 100) {
+        document.getElementById('fps').textContent = Math.round(this.frames / (time - this.lastTime))
+
+        this.frames = 0
+        this.lastTime = time
+      }
+
+      this.frames += 1
     }
   }
 
-  render () {
+  render (time) {
     const gl = this.gl
     const program = this.program
-
-    const time = window.performance.now()
 
     const positionLocation = gl.getAttribLocation(program, 'a_position')
     gl.enableVertexAttribArray(positionLocation)
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
 
     const timeLocation = gl.getUniformLocation(program, 'time')
-    gl.uniform1f(timeLocation, (time - this.startTime) / 1000)
+    gl.uniform1f(timeLocation, time)
 
     const resolutionUniform = gl.getUniformLocation(program, 'resolution')
     gl.uniform2fv(resolutionUniform, [this.canvas.width, this.canvas.height])
 
-    for (const uniform of uniforms) {
+    for (const uniform of this.uniforms) {
       const uniformLocation = gl.getUniformLocation(program, uniform)
       gl.uniform3fv(uniformLocation, colorToVec(document.getElementById(uniform).value))
     }
 
-    if (this.frames % 4 === 0) {
-      gl.clearColor(1.0, 0.0, 0.0, 1.0)
-      gl.clear(gl.COLOR_BUFFER_BIT)
-      gl.drawArrays(gl.TRIANGLES, 0, 6)
-    }
-
-    if (this.frames >= 100) {
-      document.getElementById('fps').textContent = Math.round(1000 * this.frames / (time - this.lastTime))
-
-      this.frames = 0
-      this.lastTime = time
-    }
-
-    this.frames += 1
+    gl.clearColor(1.0, 0.0, 0.0, 1.0)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+    gl.drawArrays(gl.TRIANGLES, 0, 6)
   }
 }
 
-function compileShader (gl, shaderType, source) {
-  const shader = gl.createShader(shaderType)
-  gl.shaderSource(shader, source)
-  gl.compileShader(shader)
-  return shader
-}
-
-async function changeFragmentShader (shaderCanvas, select) {
+async function selectFragmentShader (shaderCanvas, select) {
   const selectedProgram = select.selectedOptions[0].value
 
   window.location.hash = '#' + selectedProgram
@@ -130,7 +122,14 @@ async function changeFragmentShader (shaderCanvas, select) {
 
   document.getElementById('shader_source').value = shaderSource
 
-  await shaderCanvas.updateFragmentShader(shaderSource)
+  changeFragmentShader(shaderCanvas, shaderSource)
+}
+
+function changeFragmentShader (shaderCanvas, shaderSource) {
+  const uniformContainer = document.getElementById('uniforms')
+  const uniforms = extractUniforms(shaderSource)
+  addUniformElements(uniformContainer, uniforms)
+  shaderCanvas.updateFragmentShader(shaderSource, uniforms)
 }
 
 function addUniformElements (uniformContainer, uniforms) {
@@ -139,21 +138,25 @@ function addUniformElements (uniformContainer, uniforms) {
   }
 
   for (const uniform of uniforms) {
-    console.log('Color uniform: ', uniform)
-
-    const li = document.createElement('li')
-
-    const label = document.createElement('label')
-    label.textContent = uniform
-
-    const input = document.createElement('input')
-    input.id = uniform
-    input.type = 'color'
-
-    li.appendChild(label)
-    li.appendChild(input)
-    uniformContainer.appendChild(li)
+    const element = uniformControlElement(uniform)
+    uniformContainer.appendChild(element)
   }
+}
+
+function uniformControlElement (uniform) {
+  const li = document.createElement('li')
+
+  const label = document.createElement('label')
+  label.textContent = uniform
+
+  const input = document.createElement('input')
+  input.id = uniform
+  input.type = 'color'
+
+  li.appendChild(label)
+  li.appendChild(input)
+
+  return li
 }
 
 async function init () {
@@ -168,11 +171,11 @@ async function init () {
 
   const canvas = new ShaderCanvas(document.getElementById('glscreen'))
 
-  await changeFragmentShader(canvas, document.getElementById('shader-selection'))
+  await selectFragmentShader(canvas, document.getElementById('shader-selection'))
 
   canvas.renderLoop()
 
-  window.changeFragmentShader = (select) => changeFragmentShader(canvas, select)
+  window.selectFragmentShader = (select) => selectFragmentShader(canvas, select)
   window.refetchCode = () => refetchCode(canvas)
   window.textareaUpdated = () => textareaUpdated(canvas)
 }
@@ -234,13 +237,13 @@ function connectWebsocket () {
 }
 
 async function refetchCode (canvas) {
-  await changeFragmentShader(document.getElementById(canvas, 'shader-selection'))
+  await selectFragmentShader(document.getElementById(canvas, 'shader-selection'))
 }
 
 async function textareaUpdated (canvas) {
   console.log('Recompiling from textarea.')
   const source = document.getElementById('shader_source').value
-  canvas.updateFragmentShader(source)
+  changeFragmentShader(canvas, source)
 }
 
 function colorToVec (colorString) {
