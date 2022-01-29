@@ -1,4 +1,3 @@
-let program
 let uniforms = []
 
 window.onload = init
@@ -29,22 +28,49 @@ class ShaderCanvas {
         1.0, 1.0]),
       this.gl.STATIC_DRAW
     )
+
+    this.program = null
   }
 
-  async changeFragmentShader (select) {
-    const selectedProgram = select.selectedOptions[0].value
+  async bindProgramSource (shaderSource) {
+    const gl = this.gl
 
-    window.location.hash = '#' + selectedProgram
-    const shaderResponse = await window.fetch(selectedProgram)
-    const shaderSource = await shaderResponse.text()
+    const vertexShader = compileShader(
+      gl,
+      gl.VERTEX_SHADER,
+      document.getElementById('2d-vertex-shader').text)
 
-    document.getElementById('shader_source').value = shaderSource
+    const uniformContainer = document.getElementById('uniforms')
+    uniforms = extractUniforms(shaderSource)
+    addUniformElements(uniformContainer, uniforms)
 
-    program = await bindProgramSource(this.gl, shaderSource)
+    const fragmentShader = compileShader(
+      gl,
+      gl.FRAGMENT_SHADER,
+      shaderSource
+    )
+
+    const program = gl.createProgram()
+    gl.attachShader(program, vertexShader)
+    gl.attachShader(program, fragmentShader)
+    gl.linkProgram(program)
+
+    gl.validateProgram(program)
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      const info = gl.getProgramInfoLog(program)
+      document.getElementById('errors').textContent = info
+      return
+    }
+    document.getElementById('errors').textContent = ''
+
+    gl.useProgram(program)
+    this.program = program
   }
 
   render () {
     const gl = this.gl
+    const program = this.program
 
     window.requestAnimationFrame(() => this.render(), this.canvas)
 
@@ -93,6 +119,18 @@ function compileShader (gl, shaderType, source) {
   return shader
 }
 
+async function changeFragmentShader (shaderCanvas, select) {
+  const selectedProgram = select.selectedOptions[0].value
+
+  window.location.hash = '#' + selectedProgram
+  const shaderResponse = await window.fetch(selectedProgram)
+  const shaderSource = await shaderResponse.text()
+
+  document.getElementById('shader_source').value = shaderSource
+
+  await shaderCanvas.bindProgramSource(shaderSource)
+}
+
 function addUniformElements (uniformContainer, uniforms) {
   while (uniformContainer.lastChild) {
     uniformContainer.removeChild(uniformContainer.lastChild)
@@ -116,40 +154,6 @@ function addUniformElements (uniformContainer, uniforms) {
   }
 }
 
-function bindProgramSource (gl, shaderSource) {
-  const vertexShader = compileShader(
-    gl,
-    gl.VERTEX_SHADER,
-    document.getElementById('2d-vertex-shader').text)
-
-  const uniformContainer = document.getElementById('uniforms')
-  uniforms = extractUniforms(shaderSource)
-  addUniformElements(uniformContainer, uniforms)
-
-  const fragmentShader = compileShader(
-    gl,
-    gl.FRAGMENT_SHADER,
-    shaderSource
-  )
-
-  const program = gl.createProgram()
-  gl.attachShader(program, vertexShader)
-  gl.attachShader(program, fragmentShader)
-  gl.linkProgram(program)
-
-  gl.validateProgram(program)
-
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    const info = gl.getProgramInfoLog(program)
-    document.getElementById('errors').textContent = info
-    return
-  }
-  document.getElementById('errors').textContent = ''
-
-  gl.useProgram(program)
-  return program
-}
-
 async function init () {
   if (isLocalhost(window.location.hostname)) {
     connectWebsocket()
@@ -162,11 +166,11 @@ async function init () {
 
   const canvas = new ShaderCanvas(document.getElementById('glscreen'))
 
-  await canvas.changeFragmentShader(document.getElementById('shader-selection'))
+  await changeFragmentShader(canvas, document.getElementById('shader-selection'))
 
   canvas.render()
 
-  window.changeFragmentShader = () => canvas.changeFragmentShader()
+  window.changeFragmentShader = (select) => changeFragmentShader(canvas, select)
   window.refetchCode = () => refetchCode(canvas)
   window.textareaUpdated = () => textareaUpdated(canvas)
 }
@@ -228,13 +232,13 @@ function connectWebsocket () {
 }
 
 async function refetchCode (canvas) {
-  await canvas.changeFragmentShader(document.getElementById('shader-selection'))
+  await changeFragmentShader(document.getElementById(canvas, 'shader-selection'))
 }
 
 async function textareaUpdated (canvas) {
   console.log('Recompiling from textarea.')
   const source = document.getElementById('shader_source').value
-  program = await bindProgramSource(canvas.gl, source)
+  canvas.bindProgramSource(source)
 }
 
 function colorToVec (colorString) {
