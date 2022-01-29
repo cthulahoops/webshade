@@ -32,7 +32,7 @@ class ShaderCanvas {
     this.program = null
   }
 
-  async bindProgramSource (shaderSource) {
+  async updateFragmentShader (shaderSource) {
     const gl = this.gl
 
     const vertexShader = compileShader(
@@ -128,7 +128,7 @@ async function changeFragmentShader (shaderCanvas, select) {
 
   document.getElementById('shader_source').value = shaderSource
 
-  await shaderCanvas.bindProgramSource(shaderSource)
+  await shaderCanvas.updateFragmentShader(shaderSource)
 }
 
 function addUniformElements (uniformContainer, uniforms) {
@@ -238,7 +238,7 @@ async function refetchCode (canvas) {
 async function textareaUpdated (canvas) {
   console.log('Recompiling from textarea.')
   const source = document.getElementById('shader_source').value
-  canvas.bindProgramSource(source)
+  canvas.updateFragmentShader(source)
 }
 
 function colorToVec (colorString) {
