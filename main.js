@@ -7,7 +7,8 @@ async function init () {
 
   const anchorText = window.location.hash.substr(1)
   if (anchorText) {
-    selectProgram(anchorText)
+    const select = document.getElementById('shader-selection')
+    setSelectedOption(select, anchorText)
   }
 
   const animation = new ShaderAnimation(document.getElementById('glscreen'))
@@ -20,16 +21,26 @@ async function init () {
   window.refetchCode = () => refetchCode(animation)
   window.textareaUpdated = () => textareaUpdated(animation)
 }
+
 window.onload = init
 
-function selectProgram (filename) {
-  console.log('Selecting: ', filename)
-  const select = document.getElementById('shader-selection')
-  for (const option of select.options) {
-    if (option.text === filename) {
-      option.selected = true
-    }
-  }
+async function selectFragmentShader (shaderAnimation, select) {
+  const selectedProgram = select.selectedOptions[0].value
+
+  window.location.hash = '#' + selectedProgram
+  const shaderResponse = await window.fetch(selectedProgram)
+  const shaderSource = await shaderResponse.text()
+
+  document.getElementById('shader_source').value = shaderSource
+
+  changeFragmentShader(shaderAnimation, shaderSource)
+}
+
+function changeFragmentShader (shaderAnimation, shaderSource) {
+  const uniformContainer = document.getElementById('uniforms')
+  const uniforms = extractUniforms(shaderSource)
+  addUniformElements(uniformContainer, uniforms)
+  shaderAnimation.updateFragmentShader(shaderSource, uniforms)
 }
 
 async function refetchCode (shaderAnimation) {
@@ -160,25 +171,6 @@ class ShaderAnimation {
   }
 }
 
-async function selectFragmentShader (shaderAnimation, select) {
-  const selectedProgram = select.selectedOptions[0].value
-
-  window.location.hash = '#' + selectedProgram
-  const shaderResponse = await window.fetch(selectedProgram)
-  const shaderSource = await shaderResponse.text()
-
-  document.getElementById('shader_source').value = shaderSource
-
-  changeFragmentShader(shaderAnimation, shaderSource)
-}
-
-function changeFragmentShader (shaderAnimation, shaderSource) {
-  const uniformContainer = document.getElementById('uniforms')
-  const uniforms = extractUniforms(shaderSource)
-  addUniformElements(uniformContainer, uniforms)
-  shaderAnimation.updateFragmentShader(shaderSource, uniforms)
-}
-
 function addUniformElements (uniformContainer, uniforms) {
   while (uniformContainer.lastChild) {
     uniformContainer.removeChild(uniformContainer.lastChild)
@@ -212,11 +204,7 @@ function handleCodeChange (filename) {
     const selectedProgram = select.selectedOptions[0].value
 
     if (selectedProgram !== filename) {
-      for (const option of select.options) {
-        if (option.text === filename) {
-          option.selected = true
-        }
-      }
+      setSelectedOption(select, filename)
     }
     refetchCode(select)
   } else {
@@ -244,4 +232,12 @@ function extractUniforms (source) {
     }
   }
   return uniforms
+}
+
+function setSelectedOption (select, value) {
+  for (const option of select.options) {
+    if (option.text === value) {
+      option.selected = true
+    }
+  }
 }
