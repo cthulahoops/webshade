@@ -1,10 +1,6 @@
 import { connectWebsocket } from './detect_changes_websocket.js'
 
 async function init () {
-  if (isLocalhost(window.location.hostname)) {
-    connectWebsocket(handleCodeChange)
-  }
-
   const anchorText = window.location.hash.substr(1)
   if (anchorText) {
     const select = document.getElementById('shader-selection')
@@ -20,6 +16,10 @@ async function init () {
   window.selectFragmentShader = (select) => selectFragmentShader(animation, select)
   window.refetchCode = () => refetchCode(animation)
   window.textareaUpdated = () => textareaUpdated(animation)
+
+  if (isLocalhost(window.location.hostname)) {
+    connectWebsocket((filename) => handleCodeChange(animation, filename))
+  }
 }
 
 window.onload = init
@@ -44,7 +44,9 @@ function changeFragmentShader (shaderAnimation, shaderSource) {
 }
 
 async function refetchCode (shaderAnimation) {
-  await selectFragmentShader(document.getElementById(shaderAnimation, 'shader-selection'))
+  await selectFragmentShader(
+    shaderAnimation,
+    document.getElementById('shader-selection'))
 }
 
 async function textareaUpdated (shaderAnimation) {
@@ -198,15 +200,11 @@ function uniformControlElement (uniform) {
   return li
 }
 
-function handleCodeChange (filename) {
+function handleCodeChange (shaderAnimation, filename) {
   if (filename.endsWith('.frag')) {
     const select = document.getElementById('shader-selection')
-    const selectedProgram = select.selectedOptions[0].value
-
-    if (selectedProgram !== filename) {
-      setSelectedOption(select, filename)
-    }
-    refetchCode(select)
+    setSelectedOption(select, filename)
+    selectFragmentShader(shaderAnimation, select)
   } else {
     window.location.reload(true)
   }
