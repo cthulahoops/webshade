@@ -1,8 +1,48 @@
 import { connectWebsocket } from './detect_changes_websocket.js'
 
+async function init () {
+  if (isLocalhost(window.location.hostname)) {
+    connectWebsocket(handleCodeChange)
+  }
+
+  const anchorText = window.location.hash.substr(1)
+  if (anchorText) {
+    selectProgram(anchorText)
+  }
+
+  const animation = new ShaderAnimation(document.getElementById('glscreen'))
+
+  await selectFragmentShader(animation, document.getElementById('shader-selection'))
+
+  animation.renderLoop()
+
+  window.selectFragmentShader = (select) => selectFragmentShader(animation, select)
+  window.refetchCode = () => refetchCode(animation)
+  window.textareaUpdated = () => textareaUpdated(animation)
+}
 window.onload = init
 
-class ShaderCanvas {
+function selectProgram (filename) {
+  console.log('Selecting: ', filename)
+  const select = document.getElementById('shader-selection')
+  for (const option of select.options) {
+    if (option.text === filename) {
+      option.selected = true
+    }
+  }
+}
+
+async function refetchCode (shaderAnimation) {
+  await selectFragmentShader(document.getElementById(shaderAnimation, 'shader-selection'))
+}
+
+async function textareaUpdated (shaderAnimation) {
+  console.log('Recompiling from textarea.')
+  const source = document.getElementById('shader_source').value
+  changeFragmentShader(shaderAnimation, source)
+}
+
+class ShaderAnimation {
   constructor (canvas) {
     this.startTime = window.performance.now()
     this.lastTime = this.startTime
@@ -15,61 +55,11 @@ class ShaderCanvas {
     canvas.height = 600
 
     this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight)
-    const buffer = this.gl.createBuffer()
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer)
-    this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
-      new Float32Array([
-        -1.0, -1.0,
-        1.0, -1.0,
-        -1.0, 1.0,
-        -1.0, 1.0,
-        1.0, -1.0,
-        1.0, 1.0]),
-      this.gl.STATIC_DRAW
-    )
+
+    this.bindQuadFillingScreen()
 
     this.program = null
     this.uniforms = []
-  }
-
-  compileShader (shaderType, source) {
-    const shader = this.gl.createShader(shaderType)
-    this.gl.shaderSource(shader, source)
-    this.gl.compileShader(shader)
-    return shader
-  }
-
-  updateFragmentShader (shaderSource, uniforms) {
-    const gl = this.gl
-
-    const vertexShader = this.compileShader(
-      gl.VERTEX_SHADER,
-      document.getElementById('2d-vertex-shader').text)
-
-    const fragmentShader = this.compileShader(
-      gl.FRAGMENT_SHADER,
-      shaderSource
-    )
-
-    this.uniforms = uniforms
-
-    const program = gl.createProgram()
-    gl.attachShader(program, vertexShader)
-    gl.attachShader(program, fragmentShader)
-    gl.linkProgram(program)
-
-    gl.validateProgram(program)
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      const info = gl.getProgramInfoLog(program)
-      document.getElementById('errors').textContent = info
-      return
-    }
-    document.getElementById('errors').textContent = ''
-
-    gl.useProgram(program)
-    this.program = program
   }
 
   renderLoop () {
@@ -113,9 +103,64 @@ class ShaderCanvas {
     gl.clear(gl.COLOR_BUFFER_BIT)
     gl.drawArrays(gl.TRIANGLES, 0, 6)
   }
+
+  updateFragmentShader (shaderSource, uniforms) {
+    const gl = this.gl
+
+    const vertexShader = this.compileShader(
+      gl.VERTEX_SHADER,
+      document.getElementById('2d-vertex-shader').text)
+
+    const fragmentShader = this.compileShader(
+      gl.FRAGMENT_SHADER,
+      shaderSource
+    )
+
+    this.uniforms = uniforms
+
+    const program = gl.createProgram()
+    gl.attachShader(program, vertexShader)
+    gl.attachShader(program, fragmentShader)
+    gl.linkProgram(program)
+
+    gl.validateProgram(program)
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      const info = gl.getProgramInfoLog(program)
+      document.getElementById('errors').textContent = info
+      return
+    }
+    document.getElementById('errors').textContent = ''
+
+    gl.useProgram(program)
+    this.program = program
+  }
+
+  bindQuadFillingScreen () {
+    const buffer = this.gl.createBuffer()
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer)
+    this.gl.bufferData(
+      this.gl.ARRAY_BUFFER,
+      new Float32Array([
+        -1.0, -1.0,
+        1.0, -1.0,
+        -1.0, 1.0,
+        -1.0, 1.0,
+        1.0, -1.0,
+        1.0, 1.0]),
+      this.gl.STATIC_DRAW
+    )
+  }
+
+  compileShader (shaderType, source) {
+    const shader = this.gl.createShader(shaderType)
+    this.gl.shaderSource(shader, source)
+    this.gl.compileShader(shader)
+    return shader
+  }
 }
 
-async function selectFragmentShader (shaderCanvas, select) {
+async function selectFragmentShader (shaderAnimation, select) {
   const selectedProgram = select.selectedOptions[0].value
 
   window.location.hash = '#' + selectedProgram
@@ -124,14 +169,14 @@ async function selectFragmentShader (shaderCanvas, select) {
 
   document.getElementById('shader_source').value = shaderSource
 
-  changeFragmentShader(shaderCanvas, shaderSource)
+  changeFragmentShader(shaderAnimation, shaderSource)
 }
 
-function changeFragmentShader (shaderCanvas, shaderSource) {
+function changeFragmentShader (shaderAnimation, shaderSource) {
   const uniformContainer = document.getElementById('uniforms')
   const uniforms = extractUniforms(shaderSource)
   addUniformElements(uniformContainer, uniforms)
-  shaderCanvas.updateFragmentShader(shaderSource, uniforms)
+  shaderAnimation.updateFragmentShader(shaderSource, uniforms)
 }
 
 function addUniformElements (uniformContainer, uniforms) {
@@ -179,49 +224,8 @@ function handleCodeChange (filename) {
   }
 }
 
-async function init () {
-  if (isLocalhost(window.location.hostname)) {
-    connectWebsocket(handleCodeChange)
-  }
-
-  const anchorText = window.location.hash.substr(1)
-  if (anchorText) {
-    selectProgram(anchorText)
-  }
-
-  const canvas = new ShaderCanvas(document.getElementById('glscreen'))
-
-  await selectFragmentShader(canvas, document.getElementById('shader-selection'))
-
-  canvas.renderLoop()
-
-  window.selectFragmentShader = (select) => selectFragmentShader(canvas, select)
-  window.refetchCode = () => refetchCode(canvas)
-  window.textareaUpdated = () => textareaUpdated(canvas)
-}
-
 function isLocalhost (hostname) {
   return hostname === '0.0.0.0' || hostname === 'localhost' || hostname === '127.0.0.1'
-}
-
-function selectProgram (filename) {
-  console.log('Selecting: ', filename)
-  const select = document.getElementById('shader-selection')
-  for (const option of select.options) {
-    if (option.text === filename) {
-      option.selected = true
-    }
-  }
-}
-
-async function refetchCode (canvas) {
-  await selectFragmentShader(document.getElementById(canvas, 'shader-selection'))
-}
-
-async function textareaUpdated (canvas) {
-  console.log('Recompiling from textarea.')
-  const source = document.getElementById('shader_source').value
-  changeFragmentShader(canvas, source)
 }
 
 function colorToVec (colorString) {
