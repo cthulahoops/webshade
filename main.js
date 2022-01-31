@@ -1,15 +1,23 @@
+// @flow
+
 import { connectWebsocket } from './detect_changes_websocket.js'
 
 async function init () {
   const anchorText = window.location.hash.substr(1)
+  const select = getShaderSelectElement()
+
   if (anchorText) {
-    const select = document.getElementById('shader-selection')
     setSelectedOption(select, anchorText)
   }
 
-  const animation = new ShaderAnimation(document.getElementById('glscreen'))
+  const canvas = document.getElementById('glscreen')
+  if (!(canvas instanceof window.HTMLCanvasElement)) {
+    throw Error("Canvas isn't a canvas")
+  }
 
-  await selectFragmentShader(animation, document.getElementById('shader-selection'))
+  const animation = new ShaderAnimation(canvas)
+
+  await selectFragmentShader(animation, select)
 
   animation.renderLoop()
 
@@ -24,20 +32,20 @@ async function init () {
 
 window.onload = init
 
-async function selectFragmentShader (shaderAnimation, select) {
+async function selectFragmentShader (shaderAnimation, select /*: HTMLSelectElement */) {
   const selectedProgram = select.selectedOptions[0].value
 
   window.location.hash = '#' + selectedProgram
   const shaderResponse = await window.fetch(selectedProgram)
   const shaderSource = await shaderResponse.text()
 
-  document.getElementById('shader_source').value = shaderSource
+  getShaderSourceTextArea().value = shaderSource
 
   changeFragmentShader(shaderAnimation, shaderSource)
 }
 
 function changeFragmentShader (shaderAnimation, shaderSource) {
-  const uniformContainer = document.getElementById('uniforms')
+  const uniformContainer = getElementByIdTyped('uniforms', window.HTMLUListElement)
   const uniforms = extractUniforms(shaderSource)
   addUniformElements(uniformContainer, uniforms)
   shaderAnimation.updateFragmentShader(shaderSource, uniforms)
@@ -46,24 +54,35 @@ function changeFragmentShader (shaderAnimation, shaderSource) {
 async function refetchCode (shaderAnimation) {
   await selectFragmentShader(
     shaderAnimation,
-    document.getElementById('shader-selection'))
+    getShaderSelectElement())
 }
 
 async function textareaUpdated (shaderAnimation) {
   console.log('Recompiling from textarea.')
-  const source = document.getElementById('shader_source').value
-  changeFragmentShader(shaderAnimation, source)
+  changeFragmentShader(shaderAnimation, getShaderSourceTextArea().value)
 }
 
 class ShaderAnimation {
-  constructor (canvas) {
+  /* :: startTime: number */
+  /* :: lastTime: number */
+  /* :: frames: number */
+  /* :: canvas: HTMLCanvasElement */
+  /* :: gl: WebGLRenderingContext */
+  /* :: program: any */
+  /* :: uniforms: Array<string> */
+
+  constructor (canvas /*: HTMLCanvasElement */) {
     this.startTime = window.performance.now()
     this.lastTime = this.startTime
     this.frames = 0
 
     this.canvas = canvas
 
-    this.gl = canvas.getContext('experimental-webgl')
+    const gl = canvas.getContext('experimental-webgl')
+    if (!(gl instanceof window.WebGLRenderingContext)) {
+      throw Error("Didn't get a WebGL context.")
+    }
+    this.gl = gl
     canvas.width = 800
     canvas.height = 600
 
@@ -83,7 +102,7 @@ class ShaderAnimation {
       this.render(time)
 
       if (this.frames >= 100) {
-        document.getElementById('fps').textContent = Math.round(this.frames / (time - this.lastTime))
+        getFPSSpan().textContent = Math.round(this.frames / (time - this.lastTime)).toString()
 
         this.frames = 0
         this.lastTime = time
@@ -105,11 +124,12 @@ class ShaderAnimation {
     gl.uniform1f(timeLocation, time)
 
     const resolutionUniform = gl.getUniformLocation(program, 'resolution')
-    gl.uniform2fv(resolutionUniform, [this.canvas.width, this.canvas.height])
+    gl.uniform2fv(resolutionUniform, ([this.canvas.width, this.canvas.height] /* : [number, number] */))
 
     for (const uniform of this.uniforms) {
       const uniformLocation = gl.getUniformLocation(program, uniform)
-      gl.uniform3fv(uniformLocation, colorToVec(document.getElementById(uniform).value))
+      const color = colorToVec(getInputElement(uniform).value)
+      gl.uniform3fv(uniformLocation, color)
     }
 
     gl.clearColor(1.0, 0.0, 0.0, 1.0)
@@ -122,7 +142,7 @@ class ShaderAnimation {
 
     const vertexShader = this.compileShader(
       gl.VERTEX_SHADER,
-      document.getElementById('2d-vertex-shader').text)
+      getVertexScriptElement().text)
 
     const fragmentShader = this.compileShader(
       gl.FRAGMENT_SHADER,
@@ -132,18 +152,23 @@ class ShaderAnimation {
     this.uniforms = uniforms
 
     const program = gl.createProgram()
+    if (!program) {
+      throw Error('Failed to create program.')
+    }
     gl.attachShader(program, vertexShader)
     gl.attachShader(program, fragmentShader)
     gl.linkProgram(program)
 
     gl.validateProgram(program)
 
+    const errorLog = getDivElement('errors')
+
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       const info = gl.getProgramInfoLog(program)
-      document.getElementById('errors').textContent = info
+      errorLog.textContent = info || 'missing program error log'
       return
     }
-    document.getElementById('errors').textContent = ''
+    errorLog.textContent = ''
 
     gl.useProgram(program)
     this.program = program
@@ -167,13 +192,16 @@ class ShaderAnimation {
 
   compileShader (shaderType, source) {
     const shader = this.gl.createShader(shaderType)
+    if (!shader) {
+      throw Error('Failed to create shader')
+    }
     this.gl.shaderSource(shader, source)
     this.gl.compileShader(shader)
     return shader
   }
 }
 
-function addUniformElements (uniformContainer, uniforms) {
+function addUniformElements (uniformContainer /* : HTMLDivElement */, uniforms) {
   while (uniformContainer.lastChild) {
     uniformContainer.removeChild(uniformContainer.lastChild)
   }
@@ -202,7 +230,7 @@ function uniformControlElement (uniform) {
 
 function handleCodeChange (shaderAnimation, filename) {
   if (filename.endsWith('.frag')) {
-    const select = document.getElementById('shader-selection')
+    const select = getShaderSelectElement()
     setSelectedOption(select, filename)
     selectFragmentShader(shaderAnimation, select)
   } else {
@@ -214,7 +242,7 @@ function isLocalhost (hostname) {
   return hostname === '0.0.0.0' || hostname === 'localhost' || hostname === '127.0.0.1'
 }
 
-function colorToVec (colorString) {
+function colorToVec (colorString /* : string */) /* : [number, number, number] */ {
   const r = parseInt('0x' + colorString.substr(1, 2))
   const g = parseInt('0x' + colorString.substr(3, 2))
   const b = parseInt('0x' + colorString.substr(5, 2))
@@ -232,10 +260,42 @@ function extractUniforms (source) {
   return uniforms
 }
 
-function setSelectedOption (select, value) {
+function setSelectedOption (select /* : HTMLSelectElement */, value) {
   for (const option of select.options) {
     if (option.text === value) {
       option.selected = true
     }
   }
+}
+
+function getShaderSourceTextArea () /* HTMLTextAreaElement */ {
+  return getElementByIdTyped('shader_source', window.HTMLTextAreaElement)
+}
+
+function getShaderSelectElement () /* : HTMLSelectElement */ {
+  return getElementByIdTyped('shader-selection', window.HTMLSelectElement)
+}
+
+function getFPSSpan () /* : HTMLSpanElement */ {
+  return getElementByIdTyped('fps', window.HTMLSpanElement)
+}
+
+function getInputElement (id) /* : HTMLInputElement */ {
+  return getElementByIdTyped(id, window.HTMLInputElement)
+}
+
+function getVertexScriptElement () /* : HTMLScriptElement */ {
+  return getElementByIdTyped('2d-vertex-shader', window.HTMLScriptElement)
+}
+
+function getDivElement (id) /* : HTMLDivElement */ {
+  return getElementByIdTyped(id, window.HTMLDivElement)
+}
+
+function getElementByIdTyped (id, type) {
+  const element = document.getElementById(id)
+  if (!(element instanceof type)) {
+    throw Error('Unexpected HTMLElement')
+  }
+  return element
 }
