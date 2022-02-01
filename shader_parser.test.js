@@ -23,7 +23,8 @@ test('just a vector', () => {
 
 test('a full function', () => {
   const expected = [
-    { type: 'keyword', value: 'function' },
+    { type: 'identifier', value: 'vec2' },
+    { type: 'identifier', value: 'toVec' },
     { type: 'open_paren', value: '(' },
     { type: 'identifier', value: 'x' },
     { type: 'comma', value: ',' },
@@ -40,7 +41,7 @@ test('a full function', () => {
     { type: 'semicolon', value: ';' },
     { type: 'close_brace', value: '}' }
   ]
-  expect(scan('function(x, y) {\n  return vec2(x, y);\n}\n')).toStrictEqual(expected)
+  expect(scan('vec2 toVec(x, y) {\n  return vec2(x, y);\n}\n')).toStrictEqual(expected)
 })
 
 test('operators', () => {

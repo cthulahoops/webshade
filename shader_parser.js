@@ -47,7 +47,7 @@ function isAlpha (token) {
   return (token >= 'a' && token <= 'z') || (token >= 'A' && token <= 'Z') || token === '_'
 }
 
-const KEYWORDS = ['return', 'function', 'uniform', 'struct', 'const', 'break', 'precision', 'for', 'while', 'if']
+const KEYWORDS = ['return', 'uniform', 'struct', 'const', 'break', 'precision', 'for', 'while', 'if']
 const OPERATORS = ['+', '-', '*', '/', '<', '>', '=', '==', '>=', '<=', '!', '!=', '+=', '-=', '++', '--', '*=', '||', '&&']
 const PUNCTUATION = new Map(Object.entries({
   '(': 'open_paren',
