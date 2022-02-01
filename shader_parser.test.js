@@ -94,3 +94,16 @@ test('multicharacter operators', () => {
   ]
   expect(scan('x *=-.6++ >= 2 && 8;')).toStrictEqual(expected)
 })
+
+test('pragmas', () => {
+  const expected = [
+    { type: 'pragma', value: '#version 100' },
+    { type: 'keyword', value: 'const' },
+    { type: 'identifier', value: 'int' },
+    { type: 'identifier', value: 'x' },
+    { type: 'operator', value: '=' },
+    { type: 'number', value: '0' },
+    { type: 'semicolon', value: ';' }
+  ]
+  expect(scan('#version 100\nconst int x = 0;')).toStrictEqual(expected)
+})

@@ -80,6 +80,9 @@ export function scan (string) {
         }
       }
       continue
+    } else if (character === '#') {
+      const value = characterStream.takeWhile((x) => x !== '\n').join('')
+      token = { type: 'pragma', value: '#' + value }
     } else if (PUNCTUATION.has(character)) {
       token = { type: PUNCTUATION.get(character), value: character }
     } else if (!characterStream.atEnd() && OPERATORS.includes(character + characterStream.peek())) {
