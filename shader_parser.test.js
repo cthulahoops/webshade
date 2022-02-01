@@ -78,3 +78,19 @@ test('comments', () => {
   ]
   expect(scan('x /* what is /**x**? ***/ /*:)*/ /**/ = -192 // A negative number\n')).toStrictEqual(expected)
 })
+
+test('multicharacter operators', () => {
+  const expected = [
+    { type: 'identifier', value: 'x' },
+    { type: 'operator', value: '*=' },
+    { type: 'operator', value: '-' },
+    { type: 'number', value: '.6' },
+    { type: 'operator', value: '++' },
+    { type: 'operator', value: '>=' },
+    { type: 'number', value: '2' },
+    { type: 'operator', value: '&&' },
+    { type: 'number', value: '8' },
+    { type: 'semicolon', value: ';' }
+  ]
+  expect(scan('x *=-.6++ >= 2 && 8;')).toStrictEqual(expected)
+})

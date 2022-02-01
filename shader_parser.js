@@ -44,11 +44,11 @@ function isDigit (token) {
 }
 
 function isAlpha (token) {
-  return (token >= 'a' && token <= 'z') || (token >= 'A' && token <= 'Z')
+  return (token >= 'a' && token <= 'z') || (token >= 'A' && token <= 'Z') || token === '_'
 }
 
-const KEYWORDS = ['return', 'function', 'uniform', 'struct', 'const', 'break', 'precision']
-const OPERATORS = ['+', '-', '*', '/', '<', '>', '=', '==', '>=', '<=', '!=', '+=', '-=', '++', '--', '*=']
+const KEYWORDS = ['return', 'function', 'uniform', 'struct', 'const', 'break', 'precision', 'for', 'while', 'if']
+const OPERATORS = ['+', '-', '*', '/', '<', '>', '=', '==', '>=', '<=', '!', '!=', '+=', '-=', '++', '--', '*=', '||', '&&']
 const PUNCTUATION = new Map(Object.entries({
   '(': 'open_paren',
   ')': 'close_paren',
@@ -82,6 +82,9 @@ export function scan (string) {
       continue
     } else if (PUNCTUATION.has(character)) {
       token = { type: PUNCTUATION.get(character), value: character }
+    } else if (!characterStream.atEnd() && OPERATORS.includes(character + characterStream.peek())) {
+      const value = character + characterStream.take()
+      token = { type: 'operator', value: value }
     } else if (OPERATORS.includes(character)) {
       token = { type: 'operator', value: character }
     } else if (isDigit(character) || character === '.') {
