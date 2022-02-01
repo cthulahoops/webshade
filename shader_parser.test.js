@@ -68,3 +68,13 @@ test('dotted', () => {
   ]
   expect(scan('object.distance')).toStrictEqual(expected)
 })
+
+test('comments', () => {
+  const expected = [
+    { type: 'identifier', value: 'x' },
+    { type: 'operator', value: '=' },
+    { type: 'operator', value: '-' },
+    { type: 'number', value: '192' }
+  ]
+  expect(scan('x /* what is /**x**? ***/ /*:)*/ /**/ = -192 // A negative number\n')).toStrictEqual(expected)
+})
