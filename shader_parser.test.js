@@ -114,6 +114,7 @@ describe('shader_parser.scan', () => {
 describe('shader_parser.parse-expression', () => {
   test.each([
     { source: '181.2', expected: { type: 'number', value: '181.2' } },
+    { source: 'x', expected: { type: 'identifier', value: 'x' } },
     { source: '(-7.2)', expected: { type: 'unary', operator: '-', argument: { type: 'number', value: '7.2' } } },
     { source: '3 * 5', expected: { type: 'binary', operator: '*', left: { type: 'number', value: '3' }, right: { type: 'number', value: '5' } } },
     {
@@ -159,3 +160,27 @@ describe('shader_parser.parse-expression', () => {
     expect(parsed.body[0]).toStrictEqual(expected)
   })
 })
+
+describe('shader_parser.parse', () =>
+  test.each([
+    {
+      source: 'void main() { y = 7; }',
+      functionName: 'main',
+      returnType: 'void'
+    },
+    {
+      source: 'int square(int x) { return x * x; }',
+      functionName: 'square',
+      returnType: 'int'
+    },
+    {
+      source: 'int quad(int a, int b, int c, int x) {\n y = a * x * x;\n y += b * x;\n y += c;\n return c; }',
+      functionName: 'quad',
+      returnType: 'int'
+    }
+  ])('shader_parser.parse($source)', ({ source, functionName, returnType }) => {
+    const parsed = parse(scan(source))
+    expect(parsed.name).toEqual(functionName)
+    expect(parsed.returnType).toEqual(returnType)
+  })
+)

@@ -37,14 +37,6 @@ class Stream {
   nextIs (x) {
     return !this.atEnd() && this.peek() === x
   }
-
-  takeMatching (predicate) {
-    const token = this.take()
-    if (!predicate(token)) {
-      throw ('Unexpected token: ', token)
-    }
-    return token
-  }
 }
 
 function isDigit (token) {
@@ -140,7 +132,7 @@ function parseFunction (tokens) {
 
   parseToken(tokens, 'close_paren')
   parseToken(tokens, 'open_brace')
-  const body = parseListTerminatedBy(tokens, 'semicolon', 'close_brace', parseBinaryOperatorExpression)
+  const body = parseListTerminatedBy(tokens, 'semicolon', 'close_brace', parseStatement)
   parseToken(tokens, 'close_brace')
 
   return {
@@ -152,7 +144,18 @@ function parseFunction (tokens) {
   }
 }
 
-function parseBinaryOperator (nextParser, operators) {
+function parseStatement (tokens) {
+  const token = tokens.take()
+  if (token.type === 'keyword' && token.value === 'return') {
+    const returnValue = parseBinaryOperatorExpression(tokens)
+    return { type: 'return', value: returnValue }
+  }
+
+  tokens.goBack()
+  return parseBinaryOperatorExpression(tokens)
+}
+
+function createBinaryOperatorParser (nextParser, operators) {
   return (tokens) => {
     let expression = nextParser(tokens)
 
@@ -178,7 +181,7 @@ const BINARY_OPERATORS_BY_PRECEDENCE = [
 
 let parseBinaryOperatorExpression = parseExpression
 for (const operators of BINARY_OPERATORS_BY_PRECEDENCE) {
-  parseBinaryOperatorExpression = parseBinaryOperator(parseBinaryOperatorExpression, operators)
+  parseBinaryOperatorExpression = createBinaryOperatorParser(parseBinaryOperatorExpression, operators)
 }
 
 function parseExpression (tokens) {
@@ -192,6 +195,8 @@ function parseExpression (tokens) {
     return containedExpression
   } else if (token.type === 'operator' && token.value === '-') {
     return { type: 'unary', operator: '-', argument: parseBinaryOperatorExpression(tokens) }
+  } else if (token.type === 'identifier') {
+    return { type: 'identifier', value: token.value }
   }
   throw Error('Unable to parse: ' + token.type + ' ' + token.value)
 }
@@ -200,8 +205,8 @@ function parseList (tokens, separatorTokenType, parser) {
   const result = []
   result.push(parser(tokens))
   while (tokens.lookAhead((x) => x.type === separatorTokenType)) {
-    result.push(parser(tokens))
     parseToken(tokens, separatorTokenType)
+    result.push(parser(tokens))
   }
   return result
 }
@@ -222,6 +227,10 @@ function parseArgument (tokens) {
   return { type: 'argument', argumentType: type, name: name }
 }
 
-function parseToken (tokens, tokenType) {
-  return tokens.takeMatching((x) => x.type === tokenType)
+function parseToken (tokens, expectedTokenType) {
+  const token = tokens.take()
+  if (token.type !== expectedTokenType) {
+    throw Error('Unexpected token: ' + token.type + ' > ' + token.value + '. Expected ' + expectedTokenType)
+  }
+  return token
 }
