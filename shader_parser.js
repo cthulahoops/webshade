@@ -114,3 +114,18 @@ export function scan (string) {
 
   return result
 }
+
+export function parse (tokens) {
+  const tokenStream = new Stream(tokens)
+  return parseExpression(tokenStream)
+}
+
+function parseExpression (tokens) {
+  const token = tokens.take()
+
+  if (token.type === 'number') {
+    return token
+  }
+
+  throw Error('Unable to parse: ', token)
+}
