@@ -142,8 +142,7 @@ function parseBinaryOperator (nextParser, operators) {
   }
 }
 
-let parseAssignment = parseExpression
-for (const operators of [
+const BINARY_OPERATORS_BY_PRECEDENCE = [
   ['*', '/'],
   ['+', '-'],
   ['<', '>', '<=', '>='],
@@ -151,7 +150,10 @@ for (const operators of [
   ['&&'],
   ['^^'],
   ['||'],
-  ['=', '+=', '-=', '*=', '/=']]) {
+  ['=', '+=', '-=', '*=', '/=']]
+
+let parseAssignment = parseExpression
+for (const operators of BINARY_OPERATORS_BY_PRECEDENCE) {
   parseAssignment = parseBinaryOperator(parseAssignment, operators)
 }
 
