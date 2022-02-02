@@ -111,7 +111,7 @@ describe('shader_parser.scan', () => {
   })
 })
 
-describe('shader_parser.parse', () => {
+describe('shader_parser.parse-expression', () => {
   test.each([
     { source: '181.2', expected: { type: 'number', value: '181.2' } },
     { source: '(-7.2)', expected: { type: 'unary', operator: '-', argument: { type: 'number', value: '7.2' } } },
@@ -148,7 +148,14 @@ describe('shader_parser.parse', () => {
         right: { type: 'binary', operator: '*', left: { type: 'number', value: '6' }, right: { type: 'number', value: '4' } }
       }
     }
+    // {
+    //   source: 'void main() { gl_FragColor = vec3(1.0, 1.0, 1.0) }',
+    //   expected: {
+    // }
+
   ])('.parse($source)', ({ source, expected }) => {
-    expect(parse(scan(source))).toStrictEqual(expected)
+    const fullSource = 'int test() { ' + source + '; }'
+    const parsed = parse(scan(fullSource))
+    expect(parsed.body[0]).toStrictEqual(expected)
   })
 })

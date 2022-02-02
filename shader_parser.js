@@ -125,7 +125,31 @@ export function scan (string) {
 
 export function parse (tokens) {
   const tokenStream = new Stream(tokens)
-  return parseAssignment(tokenStream)
+  return parseFunction(tokenStream)
+}
+
+function parseFunction (tokens) {
+  const returnType = parseToken(tokens, 'identifier')
+  const functionName = parseToken(tokens, 'identifier')
+  parseToken(tokens, 'open_paren')
+
+  let functionArguments = []
+  if (!tokens.lookAhead((x) => x.type === 'close_paren')) {
+    functionArguments = parseList(tokens, 'comma', parseArgument)
+  }
+
+  parseToken(tokens, 'close_paren')
+  parseToken(tokens, 'open_brace')
+  const body = parseListTerminatedBy(tokens, 'semicolon', 'close_brace', parseBinaryOperatorExpression)
+  parseToken(tokens, 'close_brace')
+
+  return {
+    type: 'function_definition',
+    name: functionName.value,
+    returnType: returnType.value,
+    functionArguments: functionArguments,
+    body: body
+  }
 }
 
 function parseBinaryOperator (nextParser, operators) {
@@ -164,10 +188,40 @@ function parseExpression (tokens) {
     return token
   } else if (token.type === 'open_paren') {
     const containedExpression = parseBinaryOperatorExpression(tokens)
-    tokens.takeMatching((x) => x.type === 'close_paren')
+    parseToken(tokens, 'close_paren')
     return containedExpression
   } else if (token.type === 'operator' && token.value === '-') {
-    return { type: 'unary', operator: '-', argument: parseExpression(tokens) }
+    return { type: 'unary', operator: '-', argument: parseBinaryOperatorExpression(tokens) }
   }
   throw Error('Unable to parse: ' + token.type + ' ' + token.value)
+}
+
+function parseList (tokens, separatorTokenType, parser) {
+  const result = []
+  result.push(parser(tokens))
+  while (tokens.lookAhead((x) => x.type === separatorTokenType)) {
+    result.push(parser(tokens))
+    parseToken(tokens, separatorTokenType)
+  }
+  return result
+}
+
+function parseListTerminatedBy (tokens, separatorTokenType, terminatorTokenType, parser) {
+  const result = []
+  while (tokens.lookAhead((x) => x.type !== terminatorTokenType)) {
+    result.push(parser(tokens))
+    parseToken(tokens, separatorTokenType)
+  }
+  return result
+}
+
+function parseArgument (tokens) {
+  const type = parseToken(tokens, 'identifier')
+  const name = parseToken(tokens, 'identifier')
+
+  return { type: 'argument', argumentType: type, name: name }
+}
+
+function parseToken (tokens, tokenType) {
+  return tokens.takeMatching((x) => x.type === tokenType)
 }
