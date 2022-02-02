@@ -128,29 +128,22 @@ export function parse (tokens) {
   return parseAddSub(tokenStream)
 }
 
-function parseAddSub (tokens) {
-  let expression = parseMulDiv(tokens)
+function parseBinaryOperator (nextParser, operators) {
+  return (tokens) => {
+    let expression = nextParser(tokens)
 
-  while (tokens.lookAhead((x) => x.type === 'operator' && (x.value === '+' || x.value === '-'))) {
-    const operator = tokens.take()
-    const right = parseMulDiv(tokens)
-    expression = { type: 'binary', operator: operator.value, left: expression, right: right }
+    while (tokens.lookAhead((x) => x.type === 'operator' && operators.includes(x.value))) {
+      const operator = tokens.take()
+      const right = nextParser(tokens)
+      expression = { type: 'binary', operator: operator.value, left: expression, right: right }
+    }
+
+    return expression
   }
-
-  return expression
 }
 
-function parseMulDiv (tokens) {
-  let expression = parseExpression(tokens)
-
-  while (tokens.lookAhead((x) => x.type === 'operator' && (x.value === '*' || x.value === '/'))) {
-    const operator = tokens.take()
-    const right = parseExpression(tokens)
-    expression = { type: 'binary', operator: operator.value, left: expression, right: right }
-  }
-
-  return expression
-}
+const parseMulDiv = parseBinaryOperator(parseExpression, ['*', '/'])
+const parseAddSub = parseBinaryOperator(parseMulDiv, ['+', '-'])
 
 function parseExpression (tokens) {
   const token = tokens.take()
