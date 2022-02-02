@@ -37,6 +37,14 @@ class Stream {
   nextIs (x) {
     return !this.atEnd() && this.peek() === x
   }
+
+  takeMatching (predicate) {
+    const token = this.take()
+    if (!predicate(token)) {
+      throw ('Unexpected token: ', token)
+    }
+    return token
+  }
 }
 
 function isDigit (token) {
@@ -117,7 +125,31 @@ export function scan (string) {
 
 export function parse (tokens) {
   const tokenStream = new Stream(tokens)
-  return parseExpression(tokenStream)
+  return parseAddSub(tokenStream)
+}
+
+function parseAddSub (tokens) {
+  let expression = parseMulDiv(tokens)
+
+  while (tokens.lookAhead((x) => x.type === 'operator' && (x.value === '+' || x.value === '-'))) {
+    const operator = tokens.take()
+    const right = parseMulDiv(tokens)
+    expression = { type: 'binary', operator: operator.value, left: expression, right: right }
+  }
+
+  return expression
+}
+
+function parseMulDiv (tokens) {
+  let expression = parseExpression(tokens)
+
+  while (tokens.lookAhead((x) => x.type === 'operator' && (x.value === '*' || x.value === '/'))) {
+    const operator = tokens.take()
+    const right = parseExpression(tokens)
+    expression = { type: 'binary', operator: operator.value, left: expression, right: right }
+  }
+
+  return expression
 }
 
 function parseExpression (tokens) {
@@ -125,7 +157,12 @@ function parseExpression (tokens) {
 
   if (token.type === 'number') {
     return token
+  } else if (token.type === 'open_paren') {
+    const containedExpression = parseExpression(tokens)
+    tokens.takeMatching((x) => x.type === 'close_paren')
+    return containedExpression
+  } else if (token.type === 'operator' && token.value === '-') {
+    return { type: 'unary', operator: '-', argument: parseExpression(tokens) }
   }
-
-  throw Error('Unable to parse: ', token)
+  throw Error('Unable to parse: ' + token.type + ' ' + token.value)
 }

@@ -112,8 +112,34 @@ describe('shader_parser.scan', () => {
 })
 
 describe('shader_parser.parse', () => {
-  test('numeric literal', () => {
-    const expected = { type: 'number', value: '181.2' }
-    expect(parse(scan('181.2'))).toStrictEqual(expected)
+  test.each([
+    { source: '181.2', expected: { type: 'number', value: '181.2' } },
+    { source: '(-7.2)', expected: { type: 'unary', operator: '-', argument: { type: 'number', value: '7.2' } } },
+    { source: '3 * 5', expected: { type: 'binary', operator: '*', left: { type: 'number', value: '3' }, right: { type: 'number', value: '5' } } },
+    {
+      source: '1 * 3 * 5',
+      expected: {
+        type: 'binary',
+        operator: '*',
+        left: {
+          type: 'binary',
+          operator: '*',
+          left: { type: 'number', value: '1' },
+          right: { type: 'number', value: '3' }
+        },
+        right: { type: 'number', value: '5' }
+      }
+    },
+    {
+      source: '1 + 3 * 5',
+      expected: {
+        type: 'binary',
+        operator: '+',
+        left: { type: 'number', value: '1' },
+        right: { type: 'binary', operator: '*', left: { type: 'number', value: '3' }, right: { type: 'number', value: '5' } }
+      }
+    }
+  ])('.parse($source)', ({ source, expected }) => {
+    expect(parse(scan(source))).toStrictEqual(expected)
   })
 })
