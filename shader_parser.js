@@ -125,7 +125,7 @@ export function scan (string) {
 
 export function parse (tokens) {
   const tokenStream = new Stream(tokens)
-  return parseAddSub(tokenStream)
+  return parseAssignment(tokenStream)
 }
 
 function parseBinaryOperator (nextParser, operators) {
@@ -142,8 +142,21 @@ function parseBinaryOperator (nextParser, operators) {
   }
 }
 
-const parseMulDiv = parseBinaryOperator(parseExpression, ['*', '/'])
-const parseAddSub = parseBinaryOperator(parseMulDiv, ['+', '-'])
+function parseAssignment (tokens) {
+  let parser = parseExpression
+  for (const operators of [
+    ['*', '/'],
+    ['+', '-'],
+    ['<', '>', '<=', '>='],
+    ['==', '!='],
+    ['&&'],
+    ['^^'],
+    ['||'],
+    ['=', '+=', '-=', '*=', '/=']]) {
+    parser = parseBinaryOperator(parser, operators)
+  }
+  return parser(tokens)
+}
 
 function parseExpression (tokens) {
   const token = tokens.take()
@@ -151,7 +164,7 @@ function parseExpression (tokens) {
   if (token.type === 'number') {
     return token
   } else if (token.type === 'open_paren') {
-    const containedExpression = parseExpression(tokens)
+    const containedExpression = parseAssignment(tokens)
     tokens.takeMatching((x) => x.type === 'close_paren')
     return containedExpression
   } else if (token.type === 'operator' && token.value === '-') {

@@ -138,6 +138,15 @@ describe('shader_parser.parse', () => {
         left: { type: 'number', value: '1' },
         right: { type: 'binary', operator: '*', left: { type: 'number', value: '3' }, right: { type: 'number', value: '5' } }
       }
+    },
+    {
+      source: '4 + 5 <= 6 * 4',
+      expected: {
+        type: 'binary',
+        operator: '<=',
+        left: { type: 'binary', operator: '+', left: { type: 'number', value: '4' }, right: { type: 'number', value: '5' } },
+        right: { type: 'binary', operator: '*', left: { type: 'number', value: '6' }, right: { type: 'number', value: '4' } }
+      }
     }
   ])('.parse($source)', ({ source, expected }) => {
     expect(parse(scan(source))).toStrictEqual(expected)
