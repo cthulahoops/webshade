@@ -152,9 +152,9 @@ const BINARY_OPERATORS_BY_PRECEDENCE = [
   ['||'],
   ['=', '+=', '-=', '*=', '/=']]
 
-let parseAssignment = parseExpression
+let parseBinaryOperatorExpression = parseExpression
 for (const operators of BINARY_OPERATORS_BY_PRECEDENCE) {
-  parseAssignment = parseBinaryOperator(parseAssignment, operators)
+  parseBinaryOperatorExpression = parseBinaryOperator(parseBinaryOperatorExpression, operators)
 }
 
 function parseExpression (tokens) {
@@ -163,7 +163,7 @@ function parseExpression (tokens) {
   if (token.type === 'number') {
     return token
   } else if (token.type === 'open_paren') {
-    const containedExpression = parseAssignment(tokens)
+    const containedExpression = parseBinaryOperatorExpression(tokens)
     tokens.takeMatching((x) => x.type === 'close_paren')
     return containedExpression
   } else if (token.type === 'operator' && token.value === '-') {
