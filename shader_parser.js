@@ -142,20 +142,17 @@ function parseBinaryOperator (nextParser, operators) {
   }
 }
 
-function parseAssignment (tokens) {
-  let parser = parseExpression
-  for (const operators of [
-    ['*', '/'],
-    ['+', '-'],
-    ['<', '>', '<=', '>='],
-    ['==', '!='],
-    ['&&'],
-    ['^^'],
-    ['||'],
-    ['=', '+=', '-=', '*=', '/=']]) {
-    parser = parseBinaryOperator(parser, operators)
-  }
-  return parser(tokens)
+let parseAssignment = parseExpression
+for (const operators of [
+  ['*', '/'],
+  ['+', '-'],
+  ['<', '>', '<=', '>='],
+  ['==', '!='],
+  ['&&'],
+  ['^^'],
+  ['||'],
+  ['=', '+=', '-=', '*=', '/=']]) {
+  parseAssignment = parseBinaryOperator(parseAssignment, operators)
 }
 
 function parseExpression (tokens) {
