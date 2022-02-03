@@ -178,23 +178,47 @@ test('struct', () => {
   expect(parsed).toStrictEqual({ type: 'struct', name: 'Thing', elements: [{ type: 'int', name: 'a' }, { type: 'int', name: 'b' }] })
 })
 
-test('parse(for)', () => {
-  const source = 'void main() { for (int c = 0; c < 7; c++) {\n x += 1; } }\n'
-  const parsed = parse(scan(source))
-  expect(parsed.body[0]).toStrictEqual(
-
-    {
-      condition: { left: { type: 'identifier', value: 'c' }, operator: '<', right: { type: 'number', value: '7' }, type: 'binary' },
-      initial: { expression: { type: 'number', value: '0' }, type: 'declaration', variableName: 'c', variableType: 'int' },
-      step: { argument: { type: 'identifier', value: 'c' }, operator: '++', type: 'unary' },
-      type: 'forLoop'
-    }
-  )
-})
-
 describe('parse_statements', () => {
   test.each([
-    { source: 'break;', expected: { type: 'break' } }
+    { source: 'break;', expected: { type: 'break' } },
+    {
+      source: 'if (x > 3) { 7; }',
+      expected: {
+        type: 'if',
+        condition: { type: 'binary', operator: '>', left: { type: 'identifier', value: 'x' }, right: { type: 'number', value: '3' } },
+        then: [{ type: 'number', value: '7' }],
+        else: []
+      }
+    },
+    {
+      source: 'if (x > 3) 7;',
+      expected: {
+        type: 'if',
+        condition: { type: 'binary', operator: '>', left: { type: 'identifier', value: 'x' }, right: { type: 'number', value: '3' } },
+        then: [{ type: 'number', value: '7' }],
+        else: []
+      }
+    },
+    {
+      source: 'if (x > 3) { 7; } else {8;}',
+      expected: {
+        type: 'if',
+        condition: { type: 'binary', operator: '>', left: { type: 'identifier', value: 'x' }, right: { type: 'number', value: '3' } },
+        then: [{ type: 'number', value: '7' }],
+        else: [{ type: 'number', value: '8' }]
+      }
+    },
+    {
+      source: 'for (int c = 0; c < 7; c++) {\n y; }',
+      expected: {
+        type: 'forLoop',
+        initial: { expression: { type: 'number', value: '0' }, type: 'declaration', variableName: 'c', variableType: 'int' },
+        condition: { left: { type: 'identifier', value: 'c' }, operator: '<', right: { type: 'number', value: '7' }, type: 'binary' },
+        step: { argument: { type: 'identifier', value: 'c' }, operator: '++', type: 'unary' },
+        block: [{ type: 'identifier', value: 'y' }]
+      }
+    }
+
   ])('parse-statement($source)', ({ source, expected }) => {
     const parsed = parseStatement(new Stream(scan(source)))
     expect(parsed).toStrictEqual(expected)

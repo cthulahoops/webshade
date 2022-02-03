@@ -8,6 +8,9 @@ export function parse (tokens) {
   return parseTopLevel(tokenStream)
 }
 
+//
+// Top Level Definitions
+//
 function parseTopLevel (tokenStream) {
   const token = tokenStream.peek()
   switch (token.type) {
@@ -60,12 +63,43 @@ function parseFunction (tokenStream) {
   }
 }
 
+function parseUniform (tokenStream) {
+  parseToken(tokenStream, 'keyword', 'uniform')
+  const variableType = tokenStream.take().value
+  const variableName = tokenStream.take().value
+  parseToken(tokenStream, 'semicolon')
+  return { type: 'uniform', variableType: variableType, variableName: variableName }
+}
+
+function parseConstant (tokenStream) {
+  parseToken(tokenStream, 'keyword', 'const')
+  const variableType = tokenStream.take().value
+  const variableName = tokenStream.take().value
+  let expression
+  if (consumeIfTokenIs(tokenStream, 'operator', '=')) {
+    expression = parseExpression(tokenStream)
+  }
+  parseToken(tokenStream, 'semicolon')
+  return { type: 'constant', variableType: variableType, variableName: variableName, expression: expression }
+}
+
+function parseStruct (tokenStream) {
+  parseToken(tokenStream, 'keyword', 'struct')
+  const name = parseToken(tokenStream, 'identifier').value
+  const elements = parseArgumentList(tokenStream, parseArgument, 'open_brace', 'close_brace')
+
+  return { type: 'struct', name: name, elements: elements }
+}
+
+//
+// Statements and Expressions
+//
 export function parseStatement (tokenStream) {
   const token = tokenStream.take()
   if (token.type === 'keyword') {
     switch (token.value) {
       case 'return': {
-        const returnValue = parseBinaryOperatorExpression(tokenStream)
+        const returnValue = parseExpression(tokenStream)
         parseToken(tokenStream, 'semicolon')
         return { type: 'return', value: returnValue }
       }
@@ -74,8 +108,10 @@ export function parseStatement (tokenStream) {
         return { type: 'break' }
       case 'for':
         return parseForLoop(tokenStream)
+      case 'if':
+        return parseIf(tokenStream)
       default:
-        throw Error('Unsupported keyword: ' + token.value)
+        throw Error('Syntax Error: Unsupported keyword: ' + token.value)
     }
   }
 
@@ -93,8 +129,8 @@ function parseForLoop (tokenStream) {
   parseToken(tokenStream, 'semicolon')
   const step = parseExpressionOrDeclaration(tokenStream)
   parseToken(tokenStream, 'close_paren')
-  parseBlock(tokenStream)
-  return { type: 'forLoop', initial, condition, step }
+  const block = parseBlockOrStatement(tokenStream)
+  return { type: 'forLoop', initial, condition, step, block }
 }
 
 function parseExpressionOrDeclaration (tokenStream) {
@@ -104,41 +140,27 @@ function parseExpressionOrDeclaration (tokenStream) {
     const variableName = tokenStream.take().value
     let expression
     if (consumeIfTokenIs(tokenStream, 'operator', '=')) {
-      expression = parseBinaryOperatorExpression(tokenStream)
+      expression = parseExpression(tokenStream)
     }
     return { type: 'declaration', variableType, variableName, expression }
   }
 
   tokenStream.goBack()
-  return parseBinaryOperatorExpression(tokenStream)
+  return parseExpression(tokenStream)
 }
 
-function parseUniform (tokenStream) {
-  parseToken(tokenStream, 'keyword', 'uniform')
-  const variableType = tokenStream.take().value
-  const variableName = tokenStream.take().value
-  parseToken(tokenStream, 'semicolon')
-  return { type: 'uniform', variableType: variableType, variableName: variableName }
-}
+function parseIf (tokenStream) {
+  parseToken(tokenStream, 'open_paren')
+  const condition = parseExpression(tokenStream)
+  parseToken(tokenStream, 'close_paren')
+  const then = parseBlockOrStatement(tokenStream)
 
-function parseConstant (tokenStream) {
-  parseToken(tokenStream, 'keyword', 'const')
-  const variableType = tokenStream.take().value
-  const variableName = tokenStream.take().value
-  let expression
-  if (consumeIfTokenIs(tokenStream, 'operator', '=')) {
-    expression = parseBinaryOperatorExpression(tokenStream)
+  let elseBlock = []
+  if (tokenStream.lookAhead((x) => x.type === 'keyword' && x.value === 'else')) {
+    tokenStream.take()
+    elseBlock = parseBlockOrStatement(tokenStream)
   }
-  parseToken(tokenStream, 'semicolon')
-  return { type: 'constant', variableType: variableType, variableName: variableName, expression: expression }
-}
-
-function parseStruct (tokenStream) {
-  parseToken(tokenStream, 'keyword', 'struct')
-  const name = parseToken(tokenStream, 'identifier').value
-  const elements = parseArgumentList(tokenStream, parseArgument, 'open_brace', 'close_brace')
-
-  return { type: 'struct', name: name, elements: elements }
+  return { type: 'if', condition, then, else: elseBlock }
 }
 
 function createBinaryOperatorParser (nextParser, operators) {
@@ -165,9 +187,9 @@ const BINARY_OPERATORS_BY_PRECEDENCE = [
   ['||'],
   ['=', '+=', '-=', '*=', '/=']]
 
-let parseBinaryOperatorExpression = parsePostfix
+let parseExpression = parsePostfix
 for (const operators of BINARY_OPERATORS_BY_PRECEDENCE) {
-  parseBinaryOperatorExpression = createBinaryOperatorParser(parseBinaryOperatorExpression, operators)
+  parseExpression = createBinaryOperatorParser(parseExpression, operators)
 }
 
 function isPostfixOperator (token) {
@@ -177,7 +199,7 @@ function isPostfixOperator (token) {
 const POSTFIX_OPERATORS = ['.', '++', '--']
 
 function parsePostfix (tokenStream) {
-  let expression = parseExpression(tokenStream)
+  let expression = parseSimpleExpression(tokenStream)
   while (tokenStream.lookAhead(isPostfixOperator)) {
     const operator = tokenStream.take()
     if (operator.value === '.') {
@@ -185,7 +207,7 @@ function parsePostfix (tokenStream) {
       expression = { type: 'attribute', expression: expression, attribute: attribute.value }
     } else if (operator.type === 'open_paren') {
       tokenStream.goBack()
-      const argumentList = parseArgumentList(tokenStream, parseBinaryOperatorExpression)
+      const argumentList = parseArgumentList(tokenStream, parseExpression)
       expression = { type: 'functionCall', function: expression, arguments: argumentList }
     } else {
       expression = { type: 'unary', operator: operator.value, argument: expression }
@@ -194,21 +216,29 @@ function parsePostfix (tokenStream) {
   return expression
 }
 
-function parseExpression (tokenStream) {
+function parseSimpleExpression (tokenStream) {
   const token = tokenStream.take()
 
   if (token.type === 'number') {
     return token
   } else if (token.type === 'open_paren') {
-    const containedExpression = parseBinaryOperatorExpression(tokenStream)
+    const containedExpression = parseExpression(tokenStream)
     parseToken(tokenStream, 'close_paren')
     return containedExpression
   } else if (token.type === 'operator' && token.value === '-') {
-    return { type: 'unary', operator: '-', argument: parseBinaryOperatorExpression(tokenStream) }
+    return { type: 'unary', operator: '-', argument: parseExpression(tokenStream) }
   } else if (token.type === 'identifier') {
     return { type: 'identifier', value: token.value }
   }
   throw Error('Unable to parse: ' + token.type + ' ' + token.value)
+}
+
+function parseBlockOrStatement (tokenStream) {
+  if (tokenStream.lookAhead((x) => x.type === 'open_brace')) {
+    return parseBlock(tokenStream)
+  } else {
+    return [parseStatement(tokenStream)]
+  }
 }
 
 function parseBlock (tokenStream) {
