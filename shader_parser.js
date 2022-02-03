@@ -91,15 +91,15 @@ function parseTopLevel (tokenStream) {
   throw Error('Unhandled top level declaration' + token.type + '/' + token.value)
 }
 
-function parseFunction (tokens) {
-  const returnType = parseToken(tokens, 'identifier')
-  const functionName = parseToken(tokens, 'identifier')
+function parseFunction (tokenStream) {
+  const returnType = parseToken(tokenStream, 'identifier')
+  const functionName = parseToken(tokenStream, 'identifier')
 
-  const functionArguments = parseArgumentList(tokens, parseArgument)
+  const functionArguments = parseArgumentList(tokenStream, parseArgument)
 
-  parseToken(tokens, 'open_brace')
-  const body = parseListTerminatedBy(tokens, 'semicolon', 'close_brace', parseStatement)
-  parseToken(tokens, 'close_brace')
+  parseToken(tokenStream, 'open_brace')
+  const body = parseListTerminatedBy(tokenStream, 'semicolon', 'close_brace', parseStatement)
+  parseToken(tokenStream, 'close_brace')
 
   return {
     type: 'function_definition',
@@ -110,22 +110,22 @@ function parseFunction (tokens) {
   }
 }
 
-function parseStatement (tokens) {
-  const token = tokens.take()
+function parseStatement (tokenStream) {
+  const token = tokenStream.take()
   if (token.type === 'keyword' && token.value === 'return') {
-    const returnValue = parseBinaryOperatorExpression(tokens)
+    const returnValue = parseBinaryOperatorExpression(tokenStream)
     return { type: 'return', value: returnValue }
-  } else if (token.type === 'identifier' && tokens.lookAhead((x) => x.type === 'identifier')) {
-    const variableName = tokens.take().value
+  } else if (token.type === 'identifier' && tokenStream.lookAhead((x) => x.type === 'identifier')) {
+    const variableName = tokenStream.take().value
     let expression
-    if (consumeIfTokenIs(tokens, 'operator', '=')) {
-      expression = parseBinaryOperatorExpression(tokens)
+    if (consumeIfTokenIs(tokenStream, 'operator', '=')) {
+      expression = parseBinaryOperatorExpression(tokenStream)
     }
     return { type: 'declaration', variableType: token.value, variableName: variableName, expression: expression }
   }
 
-  tokens.goBack()
-  return parseBinaryOperatorExpression(tokens)
+  tokenStream.goBack()
+  return parseBinaryOperatorExpression(tokenStream)
 }
 
 function parseConstant (tokenStream) {
@@ -141,12 +141,12 @@ function parseConstant (tokenStream) {
 }
 
 function createBinaryOperatorParser (nextParser, operators) {
-  return (tokens) => {
-    let expression = nextParser(tokens)
+  return (tokenStream) => {
+    let expression = nextParser(tokenStream)
 
-    while (tokens.lookAhead((x) => x.type === 'operator' && operators.includes(x.value))) {
-      const operator = tokens.take()
-      const right = nextParser(tokens)
+    while (tokenStream.lookAhead((x) => x.type === 'operator' && operators.includes(x.value))) {
+      const operator = tokenStream.take()
+      const right = nextParser(tokenStream)
       expression = { type: 'binary', operator: operator.value, left: expression, right: right }
     }
 
@@ -175,16 +175,16 @@ function isPostfixOperator (token) {
 
 const POSTFIX_OPERATORS = ['.', '++', '--']
 
-function parsePostfix (tokens) {
-  let expression = parseExpression(tokens)
-  while (tokens.lookAhead(isPostfixOperator)) {
-    const operator = tokens.take()
+function parsePostfix (tokenStream) {
+  let expression = parseExpression(tokenStream)
+  while (tokenStream.lookAhead(isPostfixOperator)) {
+    const operator = tokenStream.take()
     if (operator.value === '.') {
-      const attribute = parseToken(tokens, 'identifier')
+      const attribute = parseToken(tokenStream, 'identifier')
       expression = { type: 'attribute', expression: expression, attribute: attribute.value }
     } else if (operator.type === 'open_paren') {
-      tokens.goBack()
-      const argumentList = parseArgumentList(tokens, parseBinaryOperatorExpression)
+      tokenStream.goBack()
+      const argumentList = parseArgumentList(tokenStream, parseBinaryOperatorExpression)
       expression = { type: 'functionCall', function: expression, arguments: argumentList }
     } else {
       expression = { type: 'unary', operator: operator.value, argument: expression }
@@ -193,65 +193,65 @@ function parsePostfix (tokens) {
   return expression
 }
 
-function parseExpression (tokens) {
-  const token = tokens.take()
+function parseExpression (tokenStream) {
+  const token = tokenStream.take()
 
   if (token.type === 'number') {
     return token
   } else if (token.type === 'open_paren') {
-    const containedExpression = parseBinaryOperatorExpression(tokens)
-    parseToken(tokens, 'close_paren')
+    const containedExpression = parseBinaryOperatorExpression(tokenStream)
+    parseToken(tokenStream, 'close_paren')
     return containedExpression
   } else if (token.type === 'operator' && token.value === '-') {
-    return { type: 'unary', operator: '-', argument: parseBinaryOperatorExpression(tokens) }
+    return { type: 'unary', operator: '-', argument: parseBinaryOperatorExpression(tokenStream) }
   } else if (token.type === 'identifier') {
     return { type: 'identifier', value: token.value }
   }
   throw Error('Unable to parse: ' + token.type + ' ' + token.value)
 }
 
-function parseArgumentList (tokens, parser) {
-  parseToken(tokens, 'open_paren')
+function parseArgumentList (tokenStream, parser) {
+  parseToken(tokenStream, 'open_paren')
 
-  if (consumeIfTokenIs(tokens, 'close_paren')) {
+  if (consumeIfTokenIs(tokenStream, 'close_paren')) {
     return []
   }
 
   const result = []
   do {
-    result.push(parser(tokens))
-  } while (consumeIfTokenIs(tokens, 'comma'))
-  parseToken(tokens, 'close_paren')
+    result.push(parser(tokenStream))
+  } while (consumeIfTokenIs(tokenStream, 'comma'))
+  parseToken(tokenStream, 'close_paren')
   return result
 }
 
-function parseListTerminatedBy (tokens, separatorTokenType, terminatorTokenType, parser) {
+function parseListTerminatedBy (tokenStream, separatorTokenType, terminatorTokenType, parser) {
   const result = []
-  while (tokens.lookAhead((x) => x.type !== terminatorTokenType)) {
-    result.push(parser(tokens))
-    parseToken(tokens, separatorTokenType)
+  while (tokenStream.lookAhead((x) => x.type !== terminatorTokenType)) {
+    result.push(parser(tokenStream))
+    parseToken(tokenStream, separatorTokenType)
   }
   return result
 }
 
-function parseArgument (tokens) {
-  const type = parseToken(tokens, 'identifier')
-  const name = parseToken(tokens, 'identifier')
+function parseArgument (tokenStream) {
+  const type = parseToken(tokenStream, 'identifier')
+  const name = parseToken(tokenStream, 'identifier')
 
   return { type: 'argument', argumentType: type, name: name }
 }
 
-function parseToken (tokens, expectedTokenType) {
-  const token = tokens.take()
+function parseToken (tokenStream, expectedTokenType) {
+  const token = tokenStream.take()
   if (token.type !== expectedTokenType) {
     throw Error('Unexpected token: ' + token.type + ' > ' + token.value + '. Expected ' + expectedTokenType)
   }
   return token
 }
 
-function consumeIfTokenIs (tokens, expectedTokenType, expectedTokenValue) {
-  if (tokens.lookAhead((x) => x.type === expectedTokenType && (!expectedTokenValue || expectedTokenValue === x.value))) {
-    tokens.take()
+function consumeIfTokenIs (tokenStream, expectedTokenType, expectedTokenValue) {
+  if (tokenStream.lookAhead((x) => x.type === expectedTokenType && (!expectedTokenValue || expectedTokenValue === x.value))) {
+    tokenStream.take()
     return true
   }
   return false
