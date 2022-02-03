@@ -54,33 +54,28 @@ export function parseStatement (tokenStream) {
   } else if (token.type === 'keyword' && token.value === 'break') {
     return { type: 'break' }
   } else if (token.type === 'keyword' && token.value === 'for') {
-    parseToken(tokenStream, 'open_paren')
-    const initial = parseForFragment(tokenStream)
-    parseToken(tokenStream, 'semicolon')
-    const condition = parseForFragment(tokenStream)
-    parseToken(tokenStream, 'semicolon')
-    const step = parseForFragment(tokenStream)
-    parseToken(tokenStream, 'close_paren')
-    parseBlock(tokenStream)
-    return { type: 'forLoop', initial, condition, step }
-  } else if (token.type === 'identifier' && tokenStream.lookAhead((x) => x.type === 'identifier')) {
-    const variableName = tokenStream.take().value
-    let expression
-    if (consumeIfTokenIs(tokenStream, 'operator', '=')) {
-      expression = parseBinaryOperatorExpression(tokenStream)
-    }
-    parseToken(tokenStream, 'semicolon')
-    return { type: 'declaration', variableType: token.value, variableName: variableName, expression: expression }
+    return parseForLoop(tokenStream)
   }
 
   tokenStream.goBack()
-  const expression = parseBinaryOperatorExpression(tokenStream)
+  const expression = parseExpressionOrDeclaration(tokenStream)
   parseToken(tokenStream, 'semicolon')
   return expression
 }
 
-// Almost a statement - but missing terminal semicolon, and can't have nested loops (I hope)!
-function parseForFragment (tokenStream) {
+function parseForLoop (tokenStream) {
+  parseToken(tokenStream, 'open_paren')
+  const initial = parseExpressionOrDeclaration(tokenStream)
+  parseToken(tokenStream, 'semicolon')
+  const condition = parseExpressionOrDeclaration(tokenStream)
+  parseToken(tokenStream, 'semicolon')
+  const step = parseExpressionOrDeclaration(tokenStream)
+  parseToken(tokenStream, 'close_paren')
+  parseBlock(tokenStream)
+  return { type: 'forLoop', initial, condition, step }
+}
+
+function parseExpressionOrDeclaration (tokenStream) {
   const token = tokenStream.take()
   if (token.type === 'identifier' && tokenStream.lookAhead((x) => x.type === 'identifier')) {
     const variableType = token.value
