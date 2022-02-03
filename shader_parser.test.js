@@ -148,12 +148,41 @@ describe('shader_parser.parse-expression', () => {
         left: { type: 'binary', operator: '+', left: { type: 'number', value: '4' }, right: { type: 'number', value: '5' } },
         right: { type: 'binary', operator: '*', left: { type: 'number', value: '6' }, right: { type: 'number', value: '4' } }
       }
+    },
+    {
+      source: 'x++',
+      expected: {
+        type: 'unary',
+        operator: '++',
+        argument: { type: 'identifier', value: 'x' }
+      }
+    },
+    {
+      source: 'x++',
+      expected: {
+        type: 'unary',
+        operator: '++',
+        argument: { type: 'identifier', value: 'x' }
+      }
+    },
+    {
+      source: 'x+++++y',
+      expected:
+      {
+        type: 'binary',
+        operator: '+',
+        left: {
+          type: 'unary',
+          operator: '++',
+          argument: {
+            type: 'unary',
+            operator: '++',
+            argument: { type: 'identifier', value: 'x' }
+          }
+        },
+        right: { type: 'identifier', value: 'y' }
+      }
     }
-    // {
-    //   source: 'void main() { gl_FragColor = vec3(1.0, 1.0, 1.0) }',
-    //   expected: {
-    // }
-
   ])('.parse($source)', ({ source, expected }) => {
     const fullSource = 'int test() { ' + source + '; }'
     const parsed = parse(scan(fullSource))
