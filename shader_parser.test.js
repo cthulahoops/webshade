@@ -237,7 +237,7 @@ describe('shader_parser.parse-function_definition', () =>
       source: 'void declare() { int i; int j = 2; }',
       functionName: 'declare',
       returnType: 'void',
-      body: [{ type: 'declaration', variableName: 'i' }, { type: 'declaration', variableName: 'j', expression: { type: 'number', value: '2' } }]
+      body: [{ type: 'declaration', variableType: 'int', variableName: 'i' }, { type: 'declaration', variableType: 'int', variableName: 'j', expression: { type: 'number', value: '2' } }]
     }
   ])('shader_parser.parse($source)', ({ source, functionName, returnType, body }) => {
     const parsed = parse(scan(source))
@@ -248,3 +248,12 @@ describe('shader_parser.parse-function_definition', () =>
     }
   })
 )
+
+test('const declaration', () => {
+  const source = 'const vec3 color = vec3(1, 0, 0);'
+  const parsed = parse(scan(source))
+  expect(parsed.type).toEqual('constant')
+  expect(parsed.variableType).toStrictEqual('vec3')
+  expect(parsed.variableName).toStrictEqual('color')
+  expect(parsed.expression.type).toStrictEqual('functionCall')
+})

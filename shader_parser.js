@@ -78,7 +78,17 @@ export function scan (string) {
 
 export function parse (tokens) {
   const tokenStream = new Stream(tokens)
-  return parseFunction(tokenStream)
+  return parseTopLevel(tokenStream)
+}
+
+function parseTopLevel (tokenStream) {
+  const token = tokenStream.peek()
+  if (token.type === 'keyword' && token.value === 'const') {
+    return parseConstant(tokenStream)
+  } else if (token.type === 'identifier') {
+    return parseFunction(tokenStream)
+  }
+  throw Error('Unhandled top level declaration' + token.type + '/' + token.value)
 }
 
 function parseFunction (tokens) {
@@ -111,11 +121,23 @@ function parseStatement (tokens) {
     if (consumeIfTokenIs(tokens, 'operator', '=')) {
       expression = parseBinaryOperatorExpression(tokens)
     }
-    return { type: 'declaration', variableName: variableName, expression: expression }
+    return { type: 'declaration', variableType: token.value, variableName: variableName, expression: expression }
   }
 
   tokens.goBack()
   return parseBinaryOperatorExpression(tokens)
+}
+
+function parseConstant (tokenStream) {
+  parseToken(tokenStream, 'keyword', 'const')
+  const variableType = tokenStream.take().value
+  const variableName = tokenStream.take().value
+  let expression
+  if (consumeIfTokenIs(tokenStream, 'operator', '=')) {
+    expression = parseBinaryOperatorExpression(tokenStream)
+  }
+  parseToken(tokenStream, 'semicolon')
+  return { type: 'constant', variableType: variableType, variableName: variableName, expression: expression }
 }
 
 function createBinaryOperatorParser (nextParser, operators) {
