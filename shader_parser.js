@@ -1,8 +1,5 @@
 import { Stream } from './stream.js'
 
-import { scan } from './scanner.js'
-export { scan }
-
 export function parse (tokens) {
   const tokenStream = new Stream(tokens)
   return parseTopLevel(tokenStream)

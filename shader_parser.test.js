@@ -1,7 +1,8 @@
 import { test, expect, describe } from '@jest/globals'
 
 import { Stream } from './stream.js'
-import { parse, scan, parseStatement } from './shader_parser.js'
+import { scan } from './scanner.js'
+import { parse, parseStatement } from './shader_parser.js'
 
 describe('shader_parser.parse-expression', () => {
   test.each([
