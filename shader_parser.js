@@ -47,14 +47,21 @@ function parseFunction (tokenStream) {
 
 export function parseStatement (tokenStream) {
   const token = tokenStream.take()
-  if (token.type === 'keyword' && token.value === 'return') {
-    const returnValue = parseBinaryOperatorExpression(tokenStream)
-    parseToken(tokenStream, 'semicolon')
-    return { type: 'return', value: returnValue }
-  } else if (token.type === 'keyword' && token.value === 'break') {
-    return { type: 'break' }
-  } else if (token.type === 'keyword' && token.value === 'for') {
-    return parseForLoop(tokenStream)
+  if (token.type === 'keyword') {
+    switch (token.value) {
+      case 'return': {
+        const returnValue = parseBinaryOperatorExpression(tokenStream)
+        parseToken(tokenStream, 'semicolon')
+        return { type: 'return', value: returnValue }
+      }
+      case 'break':
+        parseToken(tokenStream, 'semicolon')
+        return { type: 'break' }
+      case 'for':
+        return parseForLoop(tokenStream)
+      default:
+        throw Error('Unsupported keyword: ' + token.value)
+    }
   }
 
   tokenStream.goBack()
