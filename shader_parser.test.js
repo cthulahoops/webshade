@@ -279,3 +279,9 @@ test('precision', () => {
 
   expect(parsed).toStrictEqual({ type: 'precision', precision: 'highp', variableType: 'float' })
 })
+
+test('struct', () => {
+  const source = 'struct Thing { int a, int b };'
+  const parsed = parse(scan(source))
+  expect(parsed).toStrictEqual({ type: 'struct', name: 'Thing', elements: [{ type: 'int', name: 'a' }, { type: 'int', name: 'b' }] })
+})

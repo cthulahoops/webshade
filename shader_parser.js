@@ -91,6 +91,8 @@ function parseTopLevel (tokenStream) {
     return parseFunction(tokenStream)
   } else if (token.type === 'pragma') {
     return token
+  } else if (token.type === 'keyword' && token.value === 'struct') {
+    return parseStruct(tokenStream)
   } else if (token.type === 'keyword' && token.value === 'precision') {
     tokenStream.take()
     const precision = parseToken(tokenStream, 'identifier').value
@@ -155,6 +157,14 @@ function parseConstant (tokenStream) {
   }
   parseToken(tokenStream, 'semicolon')
   return { type: 'constant', variableType: variableType, variableName: variableName, expression: expression }
+}
+
+function parseStruct (tokenStream) {
+  parseToken(tokenStream, 'keyword', 'struct')
+  const name = parseToken(tokenStream, 'identifier').value
+  const elements = parseArgumentList(tokenStream, parseArgument, 'open_brace', 'close_brace')
+
+  return { type: 'struct', name: name, elements: elements }
 }
 
 function createBinaryOperatorParser (nextParser, operators) {
@@ -227,10 +237,10 @@ function parseExpression (tokenStream) {
   throw Error('Unable to parse: ' + token.type + ' ' + token.value)
 }
 
-function parseArgumentList (tokenStream, parser) {
-  parseToken(tokenStream, 'open_paren')
+function parseArgumentList (tokenStream, parser, open = 'open_paren', close = 'close_paren') {
+  parseToken(tokenStream, open)
 
-  if (consumeIfTokenIs(tokenStream, 'close_paren')) {
+  if (consumeIfTokenIs(tokenStream, close)) {
     return []
   }
 
@@ -238,7 +248,7 @@ function parseArgumentList (tokenStream, parser) {
   do {
     result.push(parser(tokenStream))
   } while (consumeIfTokenIs(tokenStream, 'comma'))
-  parseToken(tokenStream, 'close_paren')
+  parseToken(tokenStream, close)
   return result
 }
 
@@ -252,10 +262,10 @@ function parseListTerminatedBy (tokenStream, separatorTokenType, terminatorToken
 }
 
 function parseArgument (tokenStream) {
-  const type = parseToken(tokenStream, 'identifier')
-  const name = parseToken(tokenStream, 'identifier')
+  const type = parseToken(tokenStream, 'identifier').value
+  const name = parseToken(tokenStream, 'identifier').value
 
-  return { type: 'argument', argumentType: type, name: name }
+  return { type, name }
 }
 
 function parseToken (tokenStream, expectedTokenType, expectedTokenValue) {
