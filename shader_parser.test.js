@@ -182,6 +182,18 @@ describe('shader_parser.parse-expression', () => {
         },
         right: { type: 'identifier', value: 'y' }
       }
+    },
+    {
+      source: 'x.y',
+      expected: { type: 'attribute', expression: { type: 'identifier', value: 'x' }, attribute: 'y' }
+    },
+    {
+      source: 'vec3(x, y, z)',
+      expected: {
+        type: 'functionCall',
+        function: { type: 'identifier', value: 'vec3' },
+        arguments: [{ type: 'identifier', value: 'x' }, { type: 'identifier', value: 'y' }, { type: 'identifier', value: 'z' }]
+      }
     }
   ])('.parse($source)', ({ source, expected }) => {
     const fullSource = 'int test() { ' + source + '; }'

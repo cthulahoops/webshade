@@ -146,7 +146,7 @@ for (const operators of BINARY_OPERATORS_BY_PRECEDENCE) {
 }
 
 function isPostfixOperator (token) {
-  return token.type === 'operator' && POSTFIX_OPERATORS.includes(token.value)
+  return (token.type === 'operator' && POSTFIX_OPERATORS.includes(token.value)) || token.type === 'open_paren'
 }
 
 const POSTFIX_OPERATORS = ['.', '++', '--']
@@ -155,9 +155,30 @@ function parsePostfix (tokens) {
   let expression = parseExpression(tokens)
   while (tokens.lookAhead(isPostfixOperator)) {
     const operator = tokens.take()
-    expression = { type: 'unary', operator: operator.value, argument: expression }
+    if (operator.value === '.') {
+      const attribute = parseToken(tokens, 'identifier')
+      expression = { type: 'attribute', expression: expression, attribute: attribute.value }
+    } else if (operator.type === 'open_paren') {
+      const argumentList = parseArgumentList(tokens)
+      expression = { type: 'functionCall', function: expression, arguments: argumentList }
+    } else {
+      expression = { type: 'unary', operator: operator.value, argument: expression }
+    }
   }
   return expression
+}
+
+function parseArgumentList (tokens) {
+  if (consumeIfTokenIs(tokens, 'close_paren')) {
+    return []
+  }
+
+  const result = []
+  do {
+    result.push(parseBinaryOperatorExpression(tokens))
+  } while (consumeIfTokenIs(tokens, 'comma'))
+  parseToken(tokens, 'close_paren')
+  return result
 }
 
 function parseExpression (tokens) {
@@ -209,4 +230,12 @@ function parseToken (tokens, expectedTokenType) {
     throw Error('Unexpected token: ' + token.type + ' > ' + token.value + '. Expected ' + expectedTokenType)
   }
   return token
+}
+
+function consumeIfTokenIs (tokens, expectedTokenType) {
+  if (tokens.lookAhead((x) => x.type === expectedTokenType)) {
+    tokens.take()
+    return true
+  }
+  return false
 }
