@@ -133,7 +133,7 @@ describe('shader_parser.parse-function_definition', () =>
       body: [{ type: 'declaration', variableType: 'int', variableName: 'i' }, { type: 'declaration', variableType: 'int', variableName: 'j', expression: { type: 'number', value: '2' } }]
     }
   ])('shader_parser.parse($source)', ({ source, functionName, returnType, body }) => {
-    const parsed = parse(scan(source))
+    const parsed = parse(scan(source))[0]
     expect(parsed.name).toEqual(functionName)
     expect(parsed.returnType).toEqual(returnType)
     if (body) {
@@ -144,7 +144,7 @@ describe('shader_parser.parse-function_definition', () =>
 
 test('const declaration', () => {
   const source = 'const vec3 color = vec3(1, 0, 0);'
-  const parsed = parse(scan(source))
+  const parsed = parse(scan(source))[0]
   expect(parsed.type).toEqual('constant')
   expect(parsed.variableType).toStrictEqual('vec3')
   expect(parsed.variableName).toStrictEqual('color')
@@ -153,7 +153,7 @@ test('const declaration', () => {
 
 test('uniform declaration', () => {
   const source = 'uniform int thing;'
-  const parsed = parse(scan(source))
+  const parsed = parse(scan(source))[0]
   expect(parsed.type).toEqual('uniform')
   expect(parsed.variableType).toStrictEqual('int')
   expect(parsed.variableName).toStrictEqual('thing')
@@ -161,21 +161,21 @@ test('uniform declaration', () => {
 
 test('pragma', () => {
   const source = '#version 100\n'
-  const parsed = parse(scan(source))
+  const parsed = parse(scan(source))[0]
 
   expect(parsed).toStrictEqual({ type: 'pragma', value: '#version 100' })
 })
 
 test('precision', () => {
   const source = 'precision highp float;'
-  const parsed = parse(scan(source))
+  const parsed = parse(scan(source))[0]
 
   expect(parsed).toStrictEqual({ type: 'precision', precision: 'highp', variableType: 'float' })
 })
 
 test('struct', () => {
-  const source = 'struct Thing { int a, int b };'
-  const parsed = parse(scan(source))
+  const source = 'struct Thing { int a; int b; };'
+  const parsed = parse(scan(source))[0]
   expect(parsed).toStrictEqual({ type: 'struct', name: 'Thing', elements: [{ type: 'int', name: 'a' }, { type: 'int', name: 'b' }] })
 })
 

@@ -2,7 +2,11 @@ import { Stream } from './stream.js'
 
 export function parse (tokens) {
   const tokenStream = new Stream(tokens)
-  return parseTopLevel(tokenStream)
+  const result = []
+  while (!tokenStream.atEnd()) {
+    result.push(parseTopLevel(tokenStream))
+  }
+  return result
 }
 
 //
@@ -41,6 +45,7 @@ function parsePrecision (tokenStream) {
   tokenStream.take()
   const precision = parseToken(tokenStream, 'identifier').value
   const variableType = parseToken(tokenStream, 'identifier').value
+  parseToken(tokenStream, 'semicolon')
   return { type: 'precision', precision: precision, variableType: variableType }
 }
 
@@ -83,7 +88,12 @@ function parseConstant (tokenStream) {
 function parseStruct (tokenStream) {
   parseToken(tokenStream, 'keyword', 'struct')
   const name = parseToken(tokenStream, 'identifier').value
-  const elements = parseArgumentList(tokenStream, parseArgument, 'open_brace', 'close_brace')
+
+  parseToken(tokenStream, 'open_brace')
+  const elements = parseListTerminatedBy(tokenStream, 'close_brace', parseStructItem)
+  parseToken(tokenStream, 'close_brace')
+
+  parseToken(tokenStream, 'semicolon')
 
   return { type: 'struct', name: name, elements: elements }
 }
@@ -271,6 +281,14 @@ function parseListTerminatedBy (tokenStream, terminatorTokenType, parser) {
 function parseArgument (tokenStream) {
   const type = parseToken(tokenStream, 'identifier').value
   const name = parseToken(tokenStream, 'identifier').value
+
+  return { type, name }
+}
+
+function parseStructItem (tokenStream) {
+  const type = parseToken(tokenStream, 'identifier').value
+  const name = parseToken(tokenStream, 'identifier').value
+  parseToken(tokenStream, 'semicolon')
 
   return { type, name }
 }
