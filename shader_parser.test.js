@@ -257,3 +257,25 @@ test('const declaration', () => {
   expect(parsed.variableName).toStrictEqual('color')
   expect(parsed.expression.type).toStrictEqual('functionCall')
 })
+
+test('uniform declaration', () => {
+  const source = 'uniform int thing;'
+  const parsed = parse(scan(source))
+  expect(parsed.type).toEqual('uniform')
+  expect(parsed.variableType).toStrictEqual('int')
+  expect(parsed.variableName).toStrictEqual('thing')
+})
+
+test('pragma', () => {
+  const source = '#version 100\n'
+  const parsed = parse(scan(source))
+
+  expect(parsed).toStrictEqual({ type: 'pragma', value: '#version 100' })
+})
+
+test('precision', () => {
+  const source = 'precision highp float;'
+  const parsed = parse(scan(source))
+
+  expect(parsed).toStrictEqual({ type: 'precision', precision: 'highp', variableType: 'float' })
+})

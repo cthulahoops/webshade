@@ -85,8 +85,17 @@ function parseTopLevel (tokenStream) {
   const token = tokenStream.peek()
   if (token.type === 'keyword' && token.value === 'const') {
     return parseConstant(tokenStream)
+  } else if (token.type === 'keyword' && token.value === 'uniform') {
+    return parseUniform(tokenStream)
   } else if (token.type === 'identifier') {
     return parseFunction(tokenStream)
+  } else if (token.type === 'pragma') {
+    return token
+  } else if (token.type === 'keyword' && token.value === 'precision') {
+    tokenStream.take()
+    const precision = parseToken(tokenStream, 'identifier').value
+    const variableType = parseToken(tokenStream, 'identifier').value
+    return { type: 'precision', precision: precision, variableType: variableType }
   }
   throw Error('Unhandled top level declaration' + token.type + '/' + token.value)
 }
@@ -126,6 +135,14 @@ function parseStatement (tokenStream) {
 
   tokenStream.goBack()
   return parseBinaryOperatorExpression(tokenStream)
+}
+
+function parseUniform (tokenStream) {
+  parseToken(tokenStream, 'keyword', 'uniform')
+  const variableType = tokenStream.take().value
+  const variableName = tokenStream.take().value
+  parseToken(tokenStream, 'semicolon')
+  return { type: 'uniform', variableType: variableType, variableName: variableName }
 }
 
 function parseConstant (tokenStream) {
@@ -241,9 +258,9 @@ function parseArgument (tokenStream) {
   return { type: 'argument', argumentType: type, name: name }
 }
 
-function parseToken (tokenStream, expectedTokenType) {
+function parseToken (tokenStream, expectedTokenType, expectedTokenValue) {
   const token = tokenStream.take()
-  if (token.type !== expectedTokenType) {
+  if (token.type !== expectedTokenType && (!expectedTokenValue || expectedTokenValue === token.value)) {
     throw Error('Unexpected token: ' + token.type + ' > ' + token.value + '. Expected ' + expectedTokenType)
   }
   return token
