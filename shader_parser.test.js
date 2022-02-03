@@ -1,6 +1,7 @@
 import { test, expect, describe } from '@jest/globals'
 
-import { parse, scan } from './shader_parser.js'
+import { Stream } from './stream.js'
+import { parse, scan, parseStatement } from './shader_parser.js'
 
 describe('shader_parser.parse-expression', () => {
   test.each([
@@ -95,9 +96,9 @@ describe('shader_parser.parse-expression', () => {
       }
     }
   ])('.parse($source)', ({ source, expected }) => {
-    const fullSource = 'int test() { ' + source + '; }'
-    const parsed = parse(scan(fullSource))
-    expect(parsed.body[0]).toStrictEqual(expected)
+    const fullSource = source + ';'
+    const parsed = parseStatement(new Stream(scan(fullSource)))
+    expect(parsed).toStrictEqual(expected)
   })
 })
 
@@ -175,4 +176,18 @@ test('struct', () => {
   const source = 'struct Thing { int a, int b };'
   const parsed = parse(scan(source))
   expect(parsed).toStrictEqual({ type: 'struct', name: 'Thing', elements: [{ type: 'int', name: 'a' }, { type: 'int', name: 'b' }] })
+})
+
+test('parse(for)', () => {
+  const source = 'void main() { for (int c = 0; c < 7; c++) {\n x += 1; } }\n'
+  const parsed = parse(scan(source))
+  expect(parsed.body[0]).toStrictEqual(
+
+    {
+      condition: { left: { type: 'identifier', value: 'c' }, operator: '<', right: { type: 'number', value: '7' }, type: 'binary' },
+      initial: { expression: { type: 'number', value: '0' }, type: 'declaration', variableName: 'c', variableType: 'int' },
+      step: { argument: { type: 'identifier', value: 'c' }, operator: '++', type: 'unary' },
+      type: 'forLoop'
+    }
+  )
 })

@@ -34,10 +34,7 @@ function parseFunction (tokenStream) {
   const functionName = parseToken(tokenStream, 'identifier')
 
   const functionArguments = parseArgumentList(tokenStream, parseArgument)
-
-  parseToken(tokenStream, 'open_brace')
-  const body = parseListTerminatedBy(tokenStream, 'semicolon', 'close_brace', parseStatement)
-  parseToken(tokenStream, 'close_brace')
+  const body = parseBlock(tokenStream)
 
   return {
     type: 'function_definition',
@@ -48,18 +45,49 @@ function parseFunction (tokenStream) {
   }
 }
 
-function parseStatement (tokenStream) {
+export function parseStatement (tokenStream) {
   const token = tokenStream.take()
   if (token.type === 'keyword' && token.value === 'return') {
     const returnValue = parseBinaryOperatorExpression(tokenStream)
+    parseToken(tokenStream, 'semicolon')
     return { type: 'return', value: returnValue }
+  } else if (token.type === 'keyword' && token.value === 'for') {
+    parseToken(tokenStream, 'open_paren')
+    const initial = parseForFragment(tokenStream)
+    parseToken(tokenStream, 'semicolon')
+    const condition = parseForFragment(tokenStream)
+    parseToken(tokenStream, 'semicolon')
+    const step = parseForFragment(tokenStream)
+    parseToken(tokenStream, 'close_paren')
+    parseBlock(tokenStream)
+    return { type: 'forLoop', initial, condition, step }
   } else if (token.type === 'identifier' && tokenStream.lookAhead((x) => x.type === 'identifier')) {
     const variableName = tokenStream.take().value
     let expression
     if (consumeIfTokenIs(tokenStream, 'operator', '=')) {
       expression = parseBinaryOperatorExpression(tokenStream)
     }
+    parseToken(tokenStream, 'semicolon')
     return { type: 'declaration', variableType: token.value, variableName: variableName, expression: expression }
+  }
+
+  tokenStream.goBack()
+  const expression = parseBinaryOperatorExpression(tokenStream)
+  parseToken(tokenStream, 'semicolon')
+  return expression
+}
+
+// Almost a statement - but missing terminal semicolon, and can't have nested loops (I hope)!
+function parseForFragment (tokenStream) {
+  const token = tokenStream.take()
+  if (token.type === 'identifier' && tokenStream.lookAhead((x) => x.type === 'identifier')) {
+    const variableType = token.value
+    const variableName = tokenStream.take().value
+    let expression
+    if (consumeIfTokenIs(tokenStream, 'operator', '=')) {
+      expression = parseBinaryOperatorExpression(tokenStream)
+    }
+    return { type: 'declaration', variableType, variableName, expression }
   }
 
   tokenStream.goBack()
@@ -164,6 +192,13 @@ function parseExpression (tokenStream) {
   throw Error('Unable to parse: ' + token.type + ' ' + token.value)
 }
 
+function parseBlock (tokenStream) {
+  parseToken(tokenStream, 'open_brace')
+  const statements = parseListTerminatedBy(tokenStream, 'close_brace', parseStatement)
+  parseToken(tokenStream, 'close_brace')
+  return statements
+}
+
 function parseArgumentList (tokenStream, parser, open = 'open_paren', close = 'close_paren') {
   parseToken(tokenStream, open)
 
@@ -179,11 +214,10 @@ function parseArgumentList (tokenStream, parser, open = 'open_paren', close = 'c
   return result
 }
 
-function parseListTerminatedBy (tokenStream, separatorTokenType, terminatorTokenType, parser) {
+function parseListTerminatedBy (tokenStream, terminatorTokenType, parser) {
   const result = []
   while (tokenStream.lookAhead((x) => x.type !== terminatorTokenType)) {
     result.push(parser(tokenStream))
-    parseToken(tokenStream, separatorTokenType)
   }
   return result
 }
