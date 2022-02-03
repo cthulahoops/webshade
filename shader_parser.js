@@ -10,23 +10,38 @@ export function parse (tokens) {
 
 function parseTopLevel (tokenStream) {
   const token = tokenStream.peek()
-  if (token.type === 'keyword' && token.value === 'const') {
-    return parseConstant(tokenStream)
-  } else if (token.type === 'keyword' && token.value === 'uniform') {
-    return parseUniform(tokenStream)
-  } else if (token.type === 'identifier') {
-    return parseFunction(tokenStream)
-  } else if (token.type === 'pragma') {
-    return token
-  } else if (token.type === 'keyword' && token.value === 'struct') {
-    return parseStruct(tokenStream)
-  } else if (token.type === 'keyword' && token.value === 'precision') {
-    tokenStream.take()
-    const precision = parseToken(tokenStream, 'identifier').value
-    const variableType = parseToken(tokenStream, 'identifier').value
-    return { type: 'precision', precision: precision, variableType: variableType }
+  switch (token.type) {
+    case 'keyword':
+      switch (token.value) {
+        case 'const':
+          return parseConstant(tokenStream)
+        case 'uniform':
+          return parseUniform(tokenStream)
+        case 'precision':
+          return parsePrecision(tokenStream)
+        case 'struct':
+          return parseStruct(tokenStream)
+        default:
+          throw Error('Unsupported keyword ' + token.value)
+      }
+    case 'pragma':
+      return parsePragma(tokenStream)
+    case 'identifier':
+      return parseFunction(tokenStream)
+    default:
+      throw Error('Unexpected token ' + token.type + '(' + token.value + ')')
   }
-  throw Error('Unhandled top level declaration' + token.type + '/' + token.value)
+}
+
+function parsePragma (tokenStream) {
+  return tokenStream.take()
+}
+
+function parsePrecision (tokenStream) {
+  tokenStream.take()
+  const precision = parseToken(tokenStream, 'identifier').value
+  const variableType = parseToken(tokenStream, 'identifier').value
+  return { type: 'precision', precision: precision, variableType: variableType }
 }
 
 function parseFunction (tokenStream) {
