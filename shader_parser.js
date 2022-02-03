@@ -145,10 +145,15 @@ for (const operators of BINARY_OPERATORS_BY_PRECEDENCE) {
   parseBinaryOperatorExpression = createBinaryOperatorParser(parseBinaryOperatorExpression, operators)
 }
 
+function isPostfixOperator (token) {
+  return token.type === 'operator' && POSTFIX_OPERATORS.includes(token.value)
+}
+
 const POSTFIX_OPERATORS = ['.', '++', '--']
+
 function parsePostfix (tokens) {
   let expression = parseExpression(tokens)
-  while (tokens.lookAhead((x) => x.type === 'operator' && POSTFIX_OPERATORS.includes(x.value))) {
+  while (tokens.lookAhead(isPostfixOperator)) {
     const operator = tokens.take()
     expression = { type: 'unary', operator: operator.value, argument: expression }
   }
