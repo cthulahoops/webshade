@@ -194,6 +194,14 @@ describe('shader_parser.parse-expression', () => {
         function: { type: 'identifier', value: 'vec3' },
         arguments: [{ type: 'identifier', value: 'x' }, { type: 'identifier', value: 'y' }, { type: 'identifier', value: 'z' }]
       }
+    },
+    {
+      source: '-sin(x)',
+      expected: {
+        type: 'unary',
+        operator: '-',
+        argument: { type: 'functionCall', function: { type: 'identifier', value: 'sin' }, arguments: [{ type: 'identifier', value: 'x' }] }
+      }
     }
   ])('.parse($source)', ({ source, expected }) => {
     const fullSource = 'int test() { ' + source + '; }'
@@ -218,6 +226,11 @@ describe('shader_parser.parse', () =>
       source: 'int quad(int a, int b, int c, int x) {\n y = a * x * x;\n y += b * x;\n y += c;\n return c; }',
       functionName: 'quad',
       returnType: 'int'
+    },
+    {
+      source: 'void nothing() {}',
+      functionName: 'nothing',
+      returnType: 'void'
     }
   ])('shader_parser.parse($source)', ({ source, functionName, returnType }) => {
     const parsed = parse(scan(source))
