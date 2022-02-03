@@ -84,14 +84,9 @@ export function parse (tokens) {
 function parseFunction (tokens) {
   const returnType = parseToken(tokens, 'identifier')
   const functionName = parseToken(tokens, 'identifier')
-  parseToken(tokens, 'open_paren')
 
-  let functionArguments = []
-  if (!tokens.lookAhead((x) => x.type === 'close_paren')) {
-    functionArguments = parseList(tokens, 'comma', parseArgument)
-  }
+  const functionArguments = parseArgumentList(tokens, parseArgument)
 
-  parseToken(tokens, 'close_paren')
   parseToken(tokens, 'open_brace')
   const body = parseListTerminatedBy(tokens, 'semicolon', 'close_brace', parseStatement)
   parseToken(tokens, 'close_brace')
@@ -159,26 +154,14 @@ function parsePostfix (tokens) {
       const attribute = parseToken(tokens, 'identifier')
       expression = { type: 'attribute', expression: expression, attribute: attribute.value }
     } else if (operator.type === 'open_paren') {
-      const argumentList = parseArgumentList(tokens)
+      tokens.goBack()
+      const argumentList = parseArgumentList(tokens, parseBinaryOperatorExpression)
       expression = { type: 'functionCall', function: expression, arguments: argumentList }
     } else {
       expression = { type: 'unary', operator: operator.value, argument: expression }
     }
   }
   return expression
-}
-
-function parseArgumentList (tokens) {
-  if (consumeIfTokenIs(tokens, 'close_paren')) {
-    return []
-  }
-
-  const result = []
-  do {
-    result.push(parseBinaryOperatorExpression(tokens))
-  } while (consumeIfTokenIs(tokens, 'comma'))
-  parseToken(tokens, 'close_paren')
-  return result
 }
 
 function parseExpression (tokens) {
@@ -198,13 +181,18 @@ function parseExpression (tokens) {
   throw Error('Unable to parse: ' + token.type + ' ' + token.value)
 }
 
-function parseList (tokens, separatorTokenType, parser) {
-  const result = []
-  result.push(parser(tokens))
-  while (tokens.lookAhead((x) => x.type === separatorTokenType)) {
-    parseToken(tokens, separatorTokenType)
-    result.push(parser(tokens))
+function parseArgumentList (tokens, parser) {
+  parseToken(tokens, 'open_paren')
+
+  if (consumeIfTokenIs(tokens, 'close_paren')) {
+    return []
   }
+
+  const result = []
+  do {
+    result.push(parser(tokens))
+  } while (consumeIfTokenIs(tokens, 'comma'))
+  parseToken(tokens, 'close_paren')
   return result
 }
 
