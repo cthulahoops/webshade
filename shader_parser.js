@@ -51,6 +51,8 @@ export function parseStatement (tokenStream) {
     const returnValue = parseBinaryOperatorExpression(tokenStream)
     parseToken(tokenStream, 'semicolon')
     return { type: 'return', value: returnValue }
+  } else if (token.type === 'keyword' && token.value === 'break') {
+    return { type: 'break' }
   } else if (token.type === 'keyword' && token.value === 'for') {
     parseToken(tokenStream, 'open_paren')
     const initial = parseForFragment(tokenStream)

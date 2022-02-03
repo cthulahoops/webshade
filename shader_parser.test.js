@@ -191,3 +191,12 @@ test('parse(for)', () => {
     }
   )
 })
+
+describe('parse_statements', () => {
+  test.each([
+    { source: 'break;', expected: { type: 'break' } }
+  ])('parse-statement($source)', ({ source, expected }) => {
+    const parsed = parseStatement(new Stream(scan(source)))
+    expect(parsed).toStrictEqual(expected)
+  })
+})
