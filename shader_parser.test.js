@@ -210,7 +210,7 @@ describe('shader_parser.parse-expression', () => {
   })
 })
 
-describe('shader_parser.parse', () =>
+describe('shader_parser.parse-function_definition', () =>
   test.each([
     {
       source: 'void main() { y = 7; }',
@@ -230,11 +230,21 @@ describe('shader_parser.parse', () =>
     {
       source: 'void nothing() {}',
       functionName: 'nothing',
-      returnType: 'void'
+      returnType: 'void',
+      body: []
+    },
+    {
+      source: 'void declare() { int i; int j = 2; }',
+      functionName: 'declare',
+      returnType: 'void',
+      body: [{ type: 'declaration', variableName: 'i' }, { type: 'declaration', variableName: 'j', expression: { type: 'number', value: '2' } }]
     }
-  ])('shader_parser.parse($source)', ({ source, functionName, returnType }) => {
+  ])('shader_parser.parse($source)', ({ source, functionName, returnType, body }) => {
     const parsed = parse(scan(source))
     expect(parsed.name).toEqual(functionName)
     expect(parsed.returnType).toEqual(returnType)
+    if (body) {
+      expect(parsed.body).toEqual(body)
+    }
   })
 )

@@ -105,6 +105,13 @@ function parseStatement (tokens) {
   if (token.type === 'keyword' && token.value === 'return') {
     const returnValue = parseBinaryOperatorExpression(tokens)
     return { type: 'return', value: returnValue }
+  } else if (token.type === 'identifier' && tokens.lookAhead((x) => x.type === 'identifier')) {
+    const variableName = tokens.take().value
+    let expression
+    if (consumeIfTokenIs(tokens, 'operator', '=')) {
+      expression = parseBinaryOperatorExpression(tokens)
+    }
+    return { type: 'declaration', variableName: variableName, expression: expression }
   }
 
   tokens.goBack()
@@ -220,8 +227,8 @@ function parseToken (tokens, expectedTokenType) {
   return token
 }
 
-function consumeIfTokenIs (tokens, expectedTokenType) {
-  if (tokens.lookAhead((x) => x.type === expectedTokenType)) {
+function consumeIfTokenIs (tokens, expectedTokenType, expectedTokenValue) {
+  if (tokens.lookAhead((x) => x.type === expectedTokenType && (!expectedTokenValue || expectedTokenValue === x.value))) {
     tokens.take()
     return true
   }
