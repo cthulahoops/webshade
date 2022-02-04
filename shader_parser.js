@@ -2,7 +2,7 @@
 
 import { Stream } from './stream.js'
 
-/* :: type Token = { type: string, value: string } */
+/* :: type Token = { type: string, value: string, position: number } */
 /* :: type Ast = Object */
 
 export function parse (tokens /* : Array<Token> */) /* : Ast */ {
@@ -43,7 +43,8 @@ function parseTopLevel (tokenStream /* : Stream<Token> */) {
 }
 
 function parsePragma (tokenStream) {
-  return tokenStream.take()
+  const token = tokenStream.take()
+  return { type: token.type, value: token.value }
 }
 
 function parsePrecision (tokenStream) {
@@ -232,7 +233,7 @@ function parseSimpleExpression (tokenStream) {
   const token = tokenStream.take()
 
   if (token.type === 'number') {
-    return token
+    return { type: token.type, value: token.value }
   } else if (token.type === 'open_paren') {
     const containedExpression = parseExpression(tokenStream)
     parseToken(tokenStream, 'close_paren')
