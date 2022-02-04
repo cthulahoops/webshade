@@ -38,7 +38,7 @@ export class Stream /* :: <T> */ {
     return !this.atEnd() && predicate(this.peek())
   }
 
-  nextIs (x /* : T => boolean */) /* : boolean */ {
+  nextIs (x /* : T */) /* : boolean */ {
     return !this.atEnd() && this.peek() === x
   }
 }

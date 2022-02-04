@@ -1,23 +1,36 @@
+// @flow
 import { Stream } from './stream.js'
+
+/* :: type Token = { type: string, value: string } */
 
 const KEYWORDS = ['return', 'uniform', 'struct', 'const', 'break', 'precision', 'for', 'while', 'if', 'else']
 const OPERATORS = ['+', '-', '*', '/', '<', '>', '=', '==', '>=', '<=', '!', '!=', '+=', '-=', '++', '--', '*=', '||', '&&']
-const PUNCTUATION = new Map(Object.entries({
-  '(': 'open_paren',
-  ')': 'close_paren',
-  '{': 'open_brace',
-  '}': 'close_brace',
-  ',': 'comma',
-  ';': 'semicolon'
-}))
+const PUNCTUATION /* : Map<string, string> */ = new Map()
+PUNCTUATION.set('(', 'open_paren')
+PUNCTUATION.set(')', 'close_paren')
+PUNCTUATION.set('{', 'open_brace')
+PUNCTUATION.set('}', 'close_brace')
+PUNCTUATION.set(',', 'comma')
+PUNCTUATION.set(';', 'semicolon')
 
-export function scan (string) {
-  const characterStream = new Stream(string)
+export function scan (string /* : string */) /* : Array<Token> */ {
+  const characterStream = new Stream(string.split(''))
   const result = []
 
+  while (true) {
+    const token = parseToken(characterStream)
+    if (!token) {
+      break
+    }
+    result.push(token)
+  }
+
+  return result
+}
+
+function parseToken (characterStream /* : Stream<string> */) /* : Token | void */ {
   while (!characterStream.atEnd()) {
     const character = characterStream.take()
-    let token
     if (character === ' ' || character === '\n') {
       continue
     } else if (character === '/' && characterStream.nextIs('/')) {
@@ -35,21 +48,25 @@ export function scan (string) {
       continue
     } else if (character === '#') {
       const value = characterStream.takeWhile((x) => x !== '\n').join('')
-      token = { type: 'pragma', value: '#' + value }
+      return { type: 'pragma', value: '#' + value }
     } else if (PUNCTUATION.has(character)) {
-      token = { type: PUNCTUATION.get(character), value: character }
+      const punctuation = PUNCTUATION.get(character)
+      if (!punctuation) {
+        throw Error('Punctuation character missing from array, was here a minute ago.')
+      }
+      return { type: punctuation, value: character }
     } else if (!characterStream.atEnd() && OPERATORS.includes(character + characterStream.peek())) {
       const value = character + characterStream.take()
-      token = { type: 'operator', value: value }
+      return { type: 'operator', value: value }
     } else if (OPERATORS.includes(character)) {
-      token = { type: 'operator', value: character }
+      return { type: 'operator', value: character }
     } else if (isDigit(character) || character === '.') {
       characterStream.goBack()
       const number = characterStream.takeWhile((x) => isDigit(x) || x === '.').join('')
       if (number === '.') {
-        token = { type: 'operator', value: number }
+        return { type: 'operator', value: number }
       } else {
-        token = { type: 'number', value: number }
+        return { type: 'number', value: number }
       }
     } else if (isAlpha(character)) {
       characterStream.goBack()
@@ -58,20 +75,16 @@ export function scan (string) {
       if (KEYWORDS.includes(value)) {
         type = 'keyword'
       }
-      token = { type: type, value: value }
-    } else {
-      throw Error('Unexpected character: ' + character)
+      return { type: type, value: value }
     }
-    result.push(token)
+    throw Error('Unexpected character: ' + character)
   }
-
-  return result
 }
 
-function isDigit (token) {
-  return (token >= '0' && token <= '9')
+function isDigit (character) {
+  return (character >= '0' && character <= '9')
 }
 
-function isAlpha (token) {
-  return (token >= 'a' && token <= 'z') || (token >= 'A' && token <= 'Z') || token === '_'
+function isAlpha (character) {
+  return (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || character === '_'
 }
