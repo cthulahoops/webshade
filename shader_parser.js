@@ -1,6 +1,11 @@
+// @flow
+
 import { Stream } from './stream.js'
 
-export function parse (tokens) {
+/* :: type Token = { type: string, value: string } */
+/* :: type Ast = Object */
+
+export function parse (tokens /* : Array<Token> */) /* : Ast */ {
   const tokenStream = new Stream(tokens)
   const result = []
   while (!tokenStream.atEnd()) {
@@ -12,7 +17,7 @@ export function parse (tokens) {
 //
 // Top Level Definitions
 //
-function parseTopLevel (tokenStream) {
+function parseTopLevel (tokenStream /* : Stream<Token> */) {
   const token = tokenStream.peek()
   switch (token.type) {
     case 'keyword':
@@ -101,7 +106,7 @@ function parseStruct (tokenStream) {
 //
 // Statements and Expressions
 //
-export function parseStatement (tokenStream) {
+export function parseStatement (tokenStream /* : Stream<Token> */) /* : Ast */ {
   const token = tokenStream.take()
   if (token.type === 'keyword') {
     switch (token.value) {

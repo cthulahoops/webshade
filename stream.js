@@ -1,16 +1,20 @@
-class Stream {
-  constructor (items) {
+// @flow
+
+export class Stream /* :: <T> */ {
+  /* :: items: Array<T> */
+  /* :: position: number */
+  constructor (items /* : Array<T> */) {
     this.items = items
     this.position = 0
   }
 
-  take () {
+  take () /* : T */ {
     const item = this.peek()
     this.position += 1
     return item
   }
 
-  peek () {
+  peek () /* : T */ {
     return this.items[this.position]
   }
 
@@ -18,11 +22,11 @@ class Stream {
     this.position -= 1
   }
 
-  atEnd () {
+  atEnd () /* : boolean */ {
     return this.position >= this.items.length
   }
 
-  takeWhile (predicate) {
+  takeWhile (predicate /* : T => boolean */) /* : Array<T> */ {
     const result = []
     while (this.lookAhead(predicate)) {
       result.push(this.take())
@@ -30,13 +34,11 @@ class Stream {
     return result
   }
 
-  lookAhead (predicate) {
+  lookAhead (predicate /* : T => boolean */) /* : boolean */ {
     return !this.atEnd() && predicate(this.peek())
   }
 
-  nextIs (x) {
+  nextIs (x /* : T => boolean */) /* : boolean */ {
     return !this.atEnd() && this.peek() === x
   }
 }
-
-export { Stream }

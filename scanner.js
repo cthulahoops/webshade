@@ -1,13 +1,5 @@
 import { Stream } from './stream.js'
 
-function isDigit (token) {
-  return (token >= '0' && token <= '9')
-}
-
-function isAlpha (token) {
-  return (token >= 'a' && token <= 'z') || (token >= 'A' && token <= 'Z') || token === '_'
-}
-
 const KEYWORDS = ['return', 'uniform', 'struct', 'const', 'break', 'precision', 'for', 'while', 'if', 'else']
 const OPERATORS = ['+', '-', '*', '/', '<', '>', '=', '==', '>=', '<=', '!', '!=', '+=', '-=', '++', '--', '*=', '||', '&&']
 const PUNCTUATION = new Map(Object.entries({
@@ -74,4 +66,12 @@ export function scan (string) {
   }
 
   return result
+}
+
+function isDigit (token) {
+  return (token >= '0' && token <= '9')
+}
+
+function isAlpha (token) {
+  return (token >= 'a' && token <= 'z') || (token >= 'A' && token <= 'Z') || token === '_'
 }
