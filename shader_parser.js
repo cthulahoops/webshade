@@ -57,7 +57,7 @@ function parseFunction (tokenStream) {
   const body = parseBlock(tokenStream)
 
   return {
-    type: 'function_definition',
+    type: 'functionDefinition',
     name: functionName.value,
     returnType: returnType.value,
     functionArguments: functionArguments,
