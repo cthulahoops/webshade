@@ -33,7 +33,7 @@ async function init () {
 
   window.document.addEventListener('keydown', (event) => camera.handleKeyDown(event))
   window.document.addEventListener('keyup', (event) => camera.handleKeyUp(event))
-  window.setInterval(() => camera.tick(), 10)
+  window.setInterval(() => camera.tick(), 50)
 }
 
 class Vector {
@@ -52,6 +52,10 @@ class Vector {
 
   static sub (v1, v2) /* : Vector */ {
     return new Vector(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z - v2.z)
+  }
+
+  static scale (v, factor) /* : Vector */ {
+    return new Vector(factor * v.x, factor * v.y, factor * v.z)
   }
 }
 
@@ -74,8 +78,7 @@ class Camera {
   }
 
   tick () {
-    this._position.x += 0.1 * this.velocity.x
-    this._position.z += 0.1 * this.velocity.z
+    this._position = Vector.add(this._position, Vector.scale(this.velocity, 0.1))
   }
 
   handleKeyDown (event) {
