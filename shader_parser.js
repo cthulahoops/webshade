@@ -31,14 +31,14 @@ function parseTopLevel (tokenStream /* : Stream<Token> */) {
         case 'struct':
           return parseStruct(tokenStream)
         default:
-          throw Error('Unsupported keyword ' + token.value)
+          throw new ParseError('Unexpected keyword: ' + token.value, token)
       }
     case 'pragma':
       return parsePragma(tokenStream)
     case 'identifier':
       return parseFunction(tokenStream)
     default:
-      throw Error('Unexpected token ' + token.type + '(' + token.value + ')')
+      throw new ParseError(`Unexpected token: ${token.type} (${token.value})`, token)
   }
 }
 
@@ -124,7 +124,7 @@ export function parseStatement (tokenStream /* : Stream<Token> */) /* : Ast */ {
       case 'if':
         return parseIf(tokenStream)
       default:
-        throw Error('Syntax Error: Unsupported keyword: ' + token.value)
+        throw new ParseError(`Syntax Error: Unexpected keyword: ${token.value}`, token)
     }
   }
 
@@ -243,7 +243,7 @@ function parseSimpleExpression (tokenStream) {
   } else if (token.type === 'identifier') {
     return { type: 'identifier', value: token.value }
   }
-  throw Error('Unable to parse: ' + token.type + ' ' + token.value)
+  throw new ParseError('Unable to parse: ' + token.type + ' ' + token.value, token)
 }
 
 function parseBlockOrStatement (tokenStream) {
@@ -302,7 +302,7 @@ function parseStructItem (tokenStream) {
 function parseToken (tokenStream, expectedTokenType, expectedTokenValue) {
   const token = tokenStream.take()
   if (token.type !== expectedTokenType && (!expectedTokenValue || expectedTokenValue === token.value)) {
-    throw Error('Unexpected token: ' + token.type + ' > ' + token.value + '. Expected ' + expectedTokenType)
+    throw new ParseError('Unexpected token: ' + token.type + ' > ' + token.value + '. Expected ' + expectedTokenType, token)
   }
   return token
 }
@@ -313,4 +313,14 @@ function consumeIfTokenIs (tokenStream, expectedTokenType, expectedTokenValue) {
     return true
   }
   return false
+}
+
+export class ParseError extends Error {
+  /* :: position: number */
+  /* :: token: Token */
+  constructor (message /* : string */, token /* : Token */) {
+    super(message)
+    this.token = token
+    this.position = token.position
+  }
 }
