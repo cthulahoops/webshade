@@ -1,3 +1,5 @@
+#version 100
+
 #ifdef GL_FRAGMENT_PRECISION_HIGH
   precision highp float;
 #else
