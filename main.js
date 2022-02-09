@@ -31,37 +31,69 @@ async function init () {
     connectWebsocket((filename) => handleCodeChange(animation, filename))
   }
 
-  window.document.addEventListener('keydown', (event) => camera.handleEvent(event))
+  window.document.addEventListener('keydown', (event) => camera.handleKeyDown(event))
+  window.document.addEventListener('keyup', (event) => camera.handleKeyUp(event))
+  window.setInterval(() => camera.tick(), 10)
 }
 
-class Camera {
+class Vector {
   /* :: x : number */
   /* :: y : number */
   /* :: z : number */
-  constructor (x, y, z) {
+  constructor (x /* : number */, y /* : number */, z /* : number */) {
     this.x = x
     this.y = y
     this.z = z
   }
 
-  getPosition () {
-    return [this.x, this.y, this.z]
+  static add (v1, v2) /* : Vector */ {
+    return new Vector(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z + v2.z)
   }
 
-  handleEvent (event) {
+  static sub (v1, v2) /* : Vector */ {
+    return new Vector(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z - v2.z)
+  }
+}
+
+const KEY_MAP = new Map()
+KEY_MAP.set('ArrowUp', new Vector(0, 0, -1))
+KEY_MAP.set('ArrowDown', new Vector(0, 0, 1))
+KEY_MAP.set('ArrowLeft', new Vector(-1, 0, 0))
+KEY_MAP.set('ArrowRight', new Vector(1, 0, 0))
+
+class Camera {
+  /* :: _position : Vector */
+  /* :: velocity : Vector */
+  constructor (x, y, z) {
+    this._position = new Vector(x, y, z)
+    this.velocity = new Vector(0, 0, 0)
+  }
+
+  get position () {
+    return [this._position.x, this._position.y, this._position.z]
+  }
+
+  tick () {
+    this._position.x += 0.1 * this.velocity.x
+    this._position.z += 0.1 * this.velocity.z
+  }
+
+  handleKeyDown (event) {
+    if (event.repeat) {
+      return
+    }
     console.log(event)
-    switch (event.key) {
-      case 'ArrowUp':
-        this.z -= 0.1
-        break
-      case 'ArrowDown':
-        this.z += 0.1
-        break
-      case 'ArrowRight':
-        this.x += 0.1
-        break
-      case 'ArrowLeft':
-        this.x -= 0.1
+    const direction = KEY_MAP.get(event.key)
+    if (direction) {
+      this.velocity = Vector.add(this.velocity, direction)
+    }
+  }
+
+  handleKeyUp (event) {
+    console.log(event)
+    const direction = KEY_MAP.get(event.key)
+    if (direction) {
+      this.velocity = Vector.sub(this.velocity, direction)
     }
   }
 }
@@ -165,7 +197,7 @@ class ShaderAnimation {
     gl.uniform2fv(resolutionUniform, ([this.canvas.width, this.canvas.height] /* : [number, number] */))
 
     const cameraPositionLocation = gl.getUniformLocation(program, 'camera_position')
-    gl.uniform3fv(cameraPositionLocation, (this.camera.getPosition() /* : [number, number, number] */))
+    gl.uniform3fv(cameraPositionLocation, (this.camera.position /* : [number, number, number] */))
 
     for (const uniform of this.uniforms) {
       const uniformLocation = gl.getUniformLocation(program, uniform)
