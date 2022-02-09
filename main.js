@@ -85,7 +85,6 @@ class Camera {
     if (event.repeat) {
       return
     }
-    console.log(event)
     const direction = KEY_MAP.get(event.key)
     if (direction) {
       this.velocity = Vector.add(this.velocity, direction)
@@ -93,7 +92,6 @@ class Camera {
   }
 
   handleKeyUp (event) {
-    console.log(event)
     const direction = KEY_MAP.get(event.key)
     if (direction) {
       this.velocity = Vector.sub(this.velocity, direction)
