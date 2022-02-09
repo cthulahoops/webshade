@@ -6,6 +6,8 @@ async function init () {
   const anchorText = window.location.hash.substr(1)
   const select = getShaderSelectElement()
 
+  const camera = new Camera(0, 1, 2)
+
   if (anchorText) {
     setSelectedOption(select, anchorText)
   }
@@ -15,7 +17,7 @@ async function init () {
     throw Error("Canvas isn't a canvas")
   }
 
-  const animation = new ShaderAnimation(canvas)
+  const animation = new ShaderAnimation(canvas, camera)
 
   await selectFragmentShader(animation, select)
 
@@ -27,6 +29,40 @@ async function init () {
 
   if (isLocalhost(window.location.hostname)) {
     connectWebsocket((filename) => handleCodeChange(animation, filename))
+  }
+
+  window.document.addEventListener('keydown', (event) => camera.handleEvent(event))
+}
+
+class Camera {
+  /* :: x : number */
+  /* :: y : number */
+  /* :: z : number */
+  constructor (x, y, z) {
+    this.x = x
+    this.y = y
+    this.z = z
+  }
+
+  getPosition () {
+    return [this.x, this.y, this.z]
+  }
+
+  handleEvent (event) {
+    console.log(event)
+    switch (event.key) {
+      case 'ArrowUp':
+        this.z -= 0.1
+        break
+      case 'ArrowDown':
+        this.z += 0.1
+        break
+      case 'ArrowRight':
+        this.x += 0.1
+        break
+      case 'ArrowLeft':
+        this.x -= 0.1
+    }
   }
 }
 
@@ -70,13 +106,15 @@ class ShaderAnimation {
   /* :: gl: WebGLRenderingContext */
   /* :: program: any */
   /* :: uniforms: Array<string> */
+  /* :: camera: Camera */
 
-  constructor (canvas /*: HTMLCanvasElement */) {
+  constructor (canvas /*: HTMLCanvasElement */, camera /* : Camera */) {
     this.startTime = window.performance.now()
     this.lastTime = this.startTime
     this.frames = 0
 
     this.canvas = canvas
+    this.camera = camera
 
     const gl = canvas.getContext('experimental-webgl')
     if (!(gl instanceof window.WebGLRenderingContext)) {
@@ -127,7 +165,7 @@ class ShaderAnimation {
     gl.uniform2fv(resolutionUniform, ([this.canvas.width, this.canvas.height] /* : [number, number] */))
 
     const cameraPositionLocation = gl.getUniformLocation(program, 'camera_position')
-    gl.uniform3fv(cameraPositionLocation, ([0, 1, 2] /* : [number, number, number] */))
+    gl.uniform3fv(cameraPositionLocation, (this.camera.getPosition() /* : [number, number, number] */))
 
     for (const uniform of this.uniforms) {
       const uniformLocation = gl.getUniformLocation(program, uniform)
