@@ -1,0 +1,43 @@
+{
+  "name": "webshade",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cthulahoops/webshade.git"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/cthulahoops/webshade/issues"
+  },
+  "babel": {
+    "presets": [
+      "@babel/env"
+    ]
+  },
+  "jest": {
+    "testTimeout": 4000
+  },
+  "homepage": "https://github.com/cthulahoops/webshade#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.16.8",
+    "@babel/core": "^7.16.12",
+    "@babel/preset-flow": "^7.16.7",
+    "babel-cli": "^6.26.0",
+    "babel-jest": "^27.4.6",
+    "flow": "^0.2.3",
+    "flow-bin": "^0.170.0",
+    "jest": "^27.4.7"
+  },
+  "dependencies": {
+    "@babel/preset-env": "^7.16.11",
+    "npx": "^3.0.0",
+    "standard-flow": "^1.0.0"
+  }
+}
