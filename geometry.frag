@@ -9,6 +9,7 @@ precision mediump int;
 
 uniform vec2 resolution;
 uniform float time;
+uniform vec3 camera_position;
 
 const int MAX_MARCHING_STEPS = 255;
 const int MAX_REFLECTION_STEPS = 5;
@@ -18,7 +19,6 @@ const float MAX_DIST = 50.0;
 
 const vec3 BACKGROUND_COLOR = vec3(0.1, 0.05, 0.02);
 
-const vec3 CAMERA = vec3(0, 1, 2);
 const vec3 AMBIENT_LIGHT = 0.2 * vec3(0.18, 0.18, 0.2);
 
 struct Material {
@@ -237,7 +237,7 @@ vec3 compute_light(vec3 light_direction, vec3 point) {
 
 vec3 pixel_color(vec2 uv) {
   vec3 color = vec3(0);
-  Ray camera = Ray(CAMERA, normalize(vec3(uv, -1)));
+  Ray camera = Ray(camera_position, normalize(vec3(uv, -1)));
 
   Ray ray = camera;
   Surface obj;

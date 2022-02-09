@@ -126,6 +126,9 @@ class ShaderAnimation {
     const resolutionUniform = gl.getUniformLocation(program, 'resolution')
     gl.uniform2fv(resolutionUniform, ([this.canvas.width, this.canvas.height] /* : [number, number] */))
 
+    const cameraPositionLocation = gl.getUniformLocation(program, 'camera_position')
+    gl.uniform3fv(cameraPositionLocation, ([0, 1, 2] /* : [number, number, number] */))
+
     for (const uniform of this.uniforms) {
       const uniformLocation = gl.getUniformLocation(program, uniform)
       const color = colorToVec(getInputElement(uniform).value)
@@ -254,7 +257,9 @@ function extractUniforms (source) {
   for (const line of source.split('\n')) {
     if (line.startsWith('uniform vec3')) {
       const uniformName = line.split(';')[0].split(' ')[2]
-      uniforms.push(uniformName)
+      if (uniformName.indexOf('COLOR') >= 0) {
+        uniforms.push(uniformName)
+      }
     }
   }
   return uniforms
