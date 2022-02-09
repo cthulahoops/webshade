@@ -9,6 +9,7 @@ precision mediump int;
 
 uniform vec2 resolution;
 uniform float time;
+uniform vec3 camera_position;
 
 const int MAX_MARCHING_STEPS = 255;
 const float PRECISION = 0.001;
@@ -127,7 +128,7 @@ void main() {
   vec3 lightPosition = vec3(-8, 4.0, 0);
 
   vec3 color = vec3(0);
-  Ray camera = Ray(vec3(0, 1.0, 4), normalize(vec3(uv, -1)));
+  Ray camera = Ray(camera_position, normalize(vec3(uv, -1)));
 
   Ray ray = camera;
   Surface obj;
