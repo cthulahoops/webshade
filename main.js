@@ -68,7 +68,7 @@ class Camera {
   }
 
   tick () {
-    this._position = this._position.add(this.velocity.scale(0.1).rotateY(this.rotation.y))
+    this._position = this._position.add(this.velocity.scale(0.2).rotateY(this.rotation.y))
   }
 
   handleMouseMove (event) {
