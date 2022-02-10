@@ -10,6 +10,7 @@ precision mediump int;
 uniform vec2 resolution;
 uniform float time;
 uniform vec3 camera_position;
+uniform vec2 camera_rotation;
 
 const int MAX_MARCHING_STEPS = 255;
 const int MAX_REFLECTION_STEPS = 5;
@@ -143,6 +144,13 @@ vec3 on_floor(vec3 p) {
   return vec3(p.x, floor_height(p) + p.y, p.z);
 }
 
+vec3 rotateY(vec3 point, float theta) {
+  return (mat4(cos(theta), 0, -sin(theta), 0,
+            0, 1, 0, 0,
+            sin(theta), 0, cos(theta), 0,
+            0, 0, 0, 1) * vec4(point, 1.0)).xyz;
+}
+
 Surface sd_scene(vec3 p) {
   Surface cube = Surface(
       sd_cube(p, 1.0, vec3(2.0, 1.0, -2.0)),
@@ -157,10 +165,6 @@ Surface sd_scene(vec3 p) {
       Material(vec3(0.9,0.3,0.9), vec3(0.1), vec3(0)));
 
   Surface floor = sd_floor(p, vec3(0.5));
-
-  Surface pawn = Surface(
-      sd_pawn(p, 2., vec3(0.0, 0.0, -1.3)),
-      Material(vec3(0.8), vec3(0.2), vec3(0)));
 
   Surface mirror = Surface(
       sd_mirror(p, vec3(0.0,1.0, -3.)),
@@ -182,7 +186,6 @@ Surface sd_scene(vec3 p) {
   scene = min_surface(light2, scene);
   scene = min_surface(cylinder, scene);
   scene = min_surface(cone, scene);
-  scene = min_surface(scene, pawn);
   scene = min_surface(mirror, scene);
   return scene;
 }
@@ -237,7 +240,7 @@ vec3 compute_light(vec3 light_direction, vec3 point) {
 
 vec3 pixel_color(vec2 uv) {
   vec3 color = vec3(0);
-  Ray camera = Ray(camera_position, normalize(vec3(uv, -1)));
+  Ray camera = Ray(camera_position, rotateY(normalize(vec3(uv, -1)), -camera_rotation.y));
 
   Ray ray = camera;
   Surface obj;

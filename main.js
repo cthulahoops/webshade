@@ -6,7 +6,7 @@ async function init () {
   const anchorText = window.location.hash.substr(1)
   const select = getShaderSelectElement()
 
-  const camera = new Camera(0, 1, 2)
+  const camera = new Camera(0, 1, 0)
 
   if (anchorText) {
     setSelectedOption(select, anchorText)
@@ -199,6 +199,9 @@ class ShaderAnimation {
 
     const cameraPositionLocation = gl.getUniformLocation(program, 'camera_position')
     gl.uniform3fv(cameraPositionLocation, (this.camera.position /* : [number, number, number] */))
+
+    const cameraRotationLocation = gl.getUniformLocation(program, 'camera_rotation')
+    gl.uniform2fv(cameraRotationLocation, ([this.camera._position.y, this.camera._position.x] /* : [number, number] */))
 
     for (const uniform of this.uniforms) {
       const uniformLocation = gl.getUniformLocation(program, uniform)
