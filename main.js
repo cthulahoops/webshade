@@ -44,6 +44,13 @@ KEY_MAP.set('ArrowUp', new Vector(0, 0, -1))
 KEY_MAP.set('ArrowDown', new Vector(0, 0, 1))
 KEY_MAP.set('ArrowLeft', new Vector(-1, 0, 0))
 KEY_MAP.set('ArrowRight', new Vector(1, 0, 0))
+KEY_MAP.set(',', new Vector(0, 0, -1))
+KEY_MAP.set('w', new Vector(0, 0, -1))
+KEY_MAP.set('o', new Vector(0, 0, 1))
+KEY_MAP.set('s', new Vector(0, 0, 1))
+KEY_MAP.set('a', new Vector(-1, 0, 0))
+KEY_MAP.set('e', new Vector(1, 0, 0))
+KEY_MAP.set('d', new Vector(1, 0, 0))
 
 class Camera {
   /* :: _position : Vector */
