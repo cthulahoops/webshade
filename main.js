@@ -1,6 +1,7 @@
 // @flow
 
 import { connectWebsocket } from './detect_changes_websocket.js'
+import { Vector } from './vector.js'
 
 async function init () {
   const anchorText = window.location.hash.substr(1)
@@ -38,29 +39,6 @@ async function init () {
   window.setInterval(() => camera.tick(), 50)
 }
 
-class Vector {
-  /* :: x : number */
-  /* :: y : number */
-  /* :: z : number */
-  constructor (x /* : number */, y /* : number */, z /* : number */) {
-    this.x = x
-    this.y = y
-    this.z = z
-  }
-
-  static add (v1, v2) /* : Vector */ {
-    return new Vector(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z + v2.z)
-  }
-
-  static sub (v1, v2) /* : Vector */ {
-    return new Vector(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z - v2.z)
-  }
-
-  static scale (v, factor) /* : Vector */ {
-    return new Vector(factor * v.x, factor * v.y, factor * v.z)
-  }
-}
-
 const KEY_MAP = new Map()
 KEY_MAP.set('ArrowUp', new Vector(0, 0, -1))
 KEY_MAP.set('ArrowDown', new Vector(0, 0, 1))
@@ -83,7 +61,7 @@ class Camera {
   }
 
   tick () {
-    this._position = Vector.add(this._position, Vector.scale(this.velocity, 0.1))
+    this._position = this._position.add(this.velocity.scale(0.1).rotateY(this.rotation.y))
   }
 
   handleMouseMove (event) {
@@ -97,14 +75,17 @@ class Camera {
     }
     const direction = KEY_MAP.get(event.key)
     if (direction) {
-      this.velocity = Vector.add(this.velocity, direction)
+      this.velocity = this.velocity.add(direction)
     }
   }
 
   handleKeyUp (event) {
+    if (!document.pointerLockElement) {
+      return
+    }
     const direction = KEY_MAP.get(event.key)
     if (direction) {
-      this.velocity = Vector.sub(this.velocity, direction)
+      this.velocity = this.velocity.subtract(direction)
     }
   }
 }
