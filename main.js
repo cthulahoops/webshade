@@ -31,6 +31,8 @@ async function init () {
     connectWebsocket((filename) => handleCodeChange(animation, filename))
   }
 
+  canvas.addEventListener('click', () => canvas.requestPointerLock())
+  canvas.addEventListener('mousemove', (event) => camera.handleMouseMove(event))
   window.document.addEventListener('keydown', (event) => camera.handleKeyDown(event))
   window.document.addEventListener('keyup', (event) => camera.handleKeyUp(event))
   window.setInterval(() => camera.tick(), 50)
@@ -68,9 +70,12 @@ KEY_MAP.set('ArrowRight', new Vector(1, 0, 0))
 class Camera {
   /* :: _position : Vector */
   /* :: velocity : Vector */
+  /* :: rotationY : number */
+
   constructor (x, y, z) {
     this._position = new Vector(x, y, z)
     this.velocity = new Vector(0, 0, 0)
+    this.rotationY = 0
   }
 
   get position () {
@@ -79,6 +84,10 @@ class Camera {
 
   tick () {
     this._position = Vector.add(this._position, Vector.scale(this.velocity, 0.1))
+  }
+
+  handleMouseMove (event) {
+    this.rotationY += event.movementX / 100
   }
 
   handleKeyDown (event) {
@@ -201,7 +210,7 @@ class ShaderAnimation {
     gl.uniform3fv(cameraPositionLocation, (this.camera.position /* : [number, number, number] */))
 
     const cameraRotationLocation = gl.getUniformLocation(program, 'camera_rotation')
-    gl.uniform2fv(cameraRotationLocation, ([this.camera._position.y, this.camera._position.x] /* : [number, number] */))
+    gl.uniform2fv(cameraRotationLocation, ([0, this.camera.rotationY] /* : [number, number] */))
 
     for (const uniform of this.uniforms) {
       const uniformLocation = gl.getUniformLocation(program, uniform)
