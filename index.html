@@ -19,12 +19,13 @@ void main() {
         <canvas id="glscreen"></canvas>
         <div>
             <select id="shader-selection" onchange="selectFragmentShader(this)">
-                <option>cone.frag</option>
                 <option>geometry.frag</option>
+                <option>cone.frag</option>
                 <option>marching.frag</option>
                 <option>manyspheres.frag</option>
                 <option>mixing.frag</option>
                 <option>simple.frag</option>
+                <option>wheel.frag</option>
             </select>
             <button onclick="refetchCode()">Refetch code</button>
             FPS = <span id=fps></span>
