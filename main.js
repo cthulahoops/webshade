@@ -70,12 +70,12 @@ KEY_MAP.set('ArrowRight', new Vector(1, 0, 0))
 class Camera {
   /* :: _position : Vector */
   /* :: velocity : Vector */
-  /* :: rotationY : number */
+  /* :: rotation : { x: number, y: number } */
 
   constructor (x, y, z) {
     this._position = new Vector(x, y, z)
     this.velocity = new Vector(0, 0, 0)
-    this.rotationY = 0
+    this.rotation = { x: 0, y: 0 }
   }
 
   get position () {
@@ -87,7 +87,8 @@ class Camera {
   }
 
   handleMouseMove (event) {
-    this.rotationY += event.movementX / 100
+    this.rotation.y += event.movementX / 100
+    this.rotation.x += event.movementY / 100
   }
 
   handleKeyDown (event) {
@@ -210,7 +211,7 @@ class ShaderAnimation {
     gl.uniform3fv(cameraPositionLocation, (this.camera.position /* : [number, number, number] */))
 
     const cameraRotationLocation = gl.getUniformLocation(program, 'camera_rotation')
-    gl.uniform2fv(cameraRotationLocation, ([0, this.camera.rotationY] /* : [number, number] */))
+    gl.uniform2fv(cameraRotationLocation, ([this.camera.rotation.x, this.camera.rotation.y] /* : [number, number] */))
 
     for (const uniform of this.uniforms) {
       const uniformLocation = gl.getUniformLocation(program, uniform)

@@ -144,13 +144,6 @@ vec3 on_floor(vec3 p) {
   return vec3(p.x, floor_height(p) + p.y, p.z);
 }
 
-vec3 rotateY(vec3 point, float theta) {
-  return (mat4(cos(theta), 0, -sin(theta), 0,
-            0, 1, 0, 0,
-            sin(theta), 0, cos(theta), 0,
-            0, 0, 0, 1) * vec4(point, 1.0)).xyz;
-}
-
 Surface sd_scene(vec3 p) {
   Surface cube = Surface(
       sd_cube(p, 1.0, vec3(2.0, 1.0, -2.0)),
@@ -238,9 +231,24 @@ vec3 compute_light(vec3 light_direction, vec3 point) {
   }
 }
 
+vec3 rotateY(vec3 point, float theta) {
+  return (mat4(cos(theta), 0, -sin(theta), 0,
+            0, 1, 0, 0,
+            sin(theta), 0, cos(theta), 0,
+            0, 0, 0, 1) * vec4(point, 1.0)).xyz;
+}
+
+vec3 rotateX(vec3 point, float theta) {
+  return (mat4(
+            1, 0, 0, 0,
+            0, cos(theta), -sin(theta), 0,
+            0, sin(theta), cos(theta), 0,
+            0, 0, 0, 1) * vec4(point, 1.0)).xyz;
+}
+
 vec3 pixel_color(vec2 uv) {
   vec3 color = vec3(0);
-  Ray camera = Ray(camera_position, rotateY(normalize(vec3(uv, -1)), -camera_rotation.y));
+  Ray camera = Ray(camera_position, rotateY(rotateX(normalize(vec3(uv, -1)), camera_rotation.x), -camera_rotation.y));
 
   Ray ray = camera;
   Surface obj;
