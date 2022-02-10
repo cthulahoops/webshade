@@ -272,14 +272,14 @@ vec3 pixel_color(vec2 uv) {
       vec3 light_direction;
 
       light_direction = normalize(LIGHT1.position - point);
-      light += compute_light(light_direction, point);
+      light = compute_light(light_direction, point);
       spec += light * specular(ray, normal, light_direction, LIGHT1.color);
-      diffuse += 0.5 * LIGHT1.color * clamp(dot(normal, light_direction), 0.0, 1.);
+      diffuse += LIGHT1.color * light * clamp(dot(normal, light_direction), 0.0, 1.);
 
       light_direction = normalize(LIGHT2.position - point);
-      light += compute_light(light_direction, point);
+      light = compute_light(light_direction, point);
       spec += light * specular(ray, normal, light_direction, LIGHT2.color);
-      diffuse += 0.5 * LIGHT2.color * light * clamp(dot(normal, light_direction), 0.0, 1.);
+      diffuse += LIGHT2.color * light * clamp(dot(normal, light_direction), 0.0, 1.);
 
       vec3 albedo = (diffuse + AMBIENT_LIGHT) * obj.material.color + spec;
 
