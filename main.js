@@ -72,12 +72,17 @@ class Camera {
   }
 
   handleMouseMove (event) {
-    this.rotation.y += event.movementX / 100
-    this.rotation.x += event.movementY / 100
+    if (document.pointerLockElement) {
+      this.rotation.y += event.movementX / 100
+      this.rotation.x += event.movementY / 100
+    }
   }
 
   handleKeyDown (event) {
     if (event.repeat) {
+      return
+    }
+    if (!document.pointerLockElement) {
       return
     }
     const direction = KEY_MAP.get(event.key)
