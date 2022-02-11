@@ -8,55 +8,55 @@ describe('scan', () => {
 
   test('just a vector', () => {
     const expected = [
-      { type: 'identifier', value: 'vec3', position: 0 },
-      { type: 'open_paren', value: '(', position: 4 },
-      { type: 'number', value: '1.0', position: 5 },
-      { type: 'comma', value: ',', position: 8 },
-      { type: 'number', value: '2', position: 10 },
-      { type: 'comma', value: ',', position: 11 },
-      { type: 'number', value: '.0', position: 13 },
-      { type: 'close_paren', value: ')', position: 15 },
-      { type: 'semicolon', value: ';', position: 16 }
+      { type: 'identifier', value: 'vec3', position: 0, prefixed: '' },
+      { type: 'open_paren', value: '(', position: 4, prefixed: '' },
+      { type: 'number', value: '1.0', position: 5, prefixed: '' },
+      { type: 'comma', value: ',', position: 8, prefixed: '' },
+      { type: 'number', value: '2', position: 10, prefixed: ' ' },
+      { type: 'comma', value: ',', position: 11, prefixed: '' },
+      { type: 'number', value: '.0', position: 13, prefixed: ' ' },
+      { type: 'close_paren', value: ')', position: 15, prefixed: '' },
+      { type: 'semicolon', value: ';', position: 16, prefixed: '' }
     ]
     expect(scan('vec3(1.0, 2, .0);')).toEqual(expected)
   })
 
   test('a full function', () => {
     const expected = [
-      { type: 'identifier', value: 'vec2', position: 0 },
-      { type: 'identifier', value: 'toVec', position: 5 },
-      { type: 'open_paren', value: '(', position: 10 },
-      { type: 'identifier', value: 'x', position: 11 },
-      { type: 'comma', value: ',', position: 12 },
-      { type: 'identifier', value: 'y', position: 14 },
-      { type: 'close_paren', value: ')', position: 15 },
-      { type: 'open_brace', value: '{', position: 17 },
-      { type: 'keyword', value: 'return', position: 21 },
-      { type: 'identifier', value: 'vec2', position: 28 },
-      { type: 'open_paren', value: '(', position: 32 },
-      { type: 'identifier', value: 'x', position: 33 },
-      { type: 'comma', value: ',', position: 34 },
-      { type: 'identifier', value: 'y', position: 36 },
-      { type: 'close_paren', value: ')', position: 37 },
-      { type: 'semicolon', value: ';', position: 38 },
-      { type: 'close_brace', value: '}', position: 40 }
+      { type: 'identifier', value: 'vec2', position: 0, prefixed: '' },
+      { type: 'identifier', value: 'toVec', position: 5, prefixed: ' ' },
+      { type: 'open_paren', value: '(', position: 10, prefixed: '' },
+      { type: 'identifier', value: 'x', position: 11, prefixed: '' },
+      { type: 'comma', value: ',', position: 12, prefixed: '' },
+      { type: 'identifier', value: 'y', position: 14, prefixed: ' ' },
+      { type: 'close_paren', value: ')', position: 15, prefixed: '' },
+      { type: 'open_brace', value: '{', position: 17, prefixed: ' ' },
+      { type: 'keyword', value: 'return', position: 21, prefixed: '\n  ' },
+      { type: 'identifier', value: 'vec2', position: 28, prefixed: ' ' },
+      { type: 'open_paren', value: '(', position: 32, prefixed: '' },
+      { type: 'identifier', value: 'x', position: 33, prefixed: '' },
+      { type: 'comma', value: ',', position: 34, prefixed: '' },
+      { type: 'identifier', value: 'y', position: 36, prefixed: ' ' },
+      { type: 'close_paren', value: ')', position: 37, prefixed: '' },
+      { type: 'semicolon', value: ';', position: 38, prefixed: '' },
+      { type: 'close_brace', value: '}', position: 40, prefixed: '\n' }
     ]
     expect(scan('vec2 toVec(x, y) {\n  return vec2(x, y);\n}\n')).toEqual(expected)
   })
 
   test('operators', () => {
     const expected = [
-      { type: 'open_paren', value: '(' },
-      { type: 'identifier', value: 'x' },
-      { type: 'operator', value: '+' },
-      { type: 'number', value: '2' },
-      { type: 'close_paren', value: ')' },
-      { type: 'operator', value: '*' },
-      { type: 'open_paren', value: '(' },
-      { type: 'number', value: '15' },
-      { type: 'operator', value: '/' },
-      { type: 'number', value: '72' },
-      { type: 'close_paren', value: ')' }
+      { type: 'open_paren', value: '(', prefixed: '' },
+      { type: 'identifier', value: 'x', prefixed: '' },
+      { type: 'operator', value: '+', prefixed: '' },
+      { type: 'number', value: '2', prefixed: '' },
+      { type: 'close_paren', value: ')', prefixed: '' },
+      { type: 'operator', value: '*', prefixed: '' },
+      { type: 'open_paren', value: '(', prefixed: '' },
+      { type: 'number', value: '15', prefixed: '' },
+      { type: 'operator', value: '/', prefixed: '' },
+      { type: 'number', value: '72', prefixed: '' },
+      { type: 'close_paren', value: ')', prefixed: '' }
     ]
     const scanned = scan('(x+2)*(15/72)')
     scanned.forEach((x) => delete x.position)
@@ -65,19 +65,19 @@ describe('scan', () => {
 
   test('dotted', () => {
     const expected = [
-      { type: 'identifier', value: 'object', position: 0 },
-      { type: 'operator', value: '.', position: 6 },
-      { type: 'identifier', value: 'distance', position: 7 }
+      { type: 'identifier', value: 'object', position: 0, prefixed: '' },
+      { type: 'operator', value: '.', position: 6, prefixed: '' },
+      { type: 'identifier', value: 'distance', position: 7, prefixed: '' }
     ]
     expect(scan('object.distance')).toStrictEqual(expected)
   })
 
   test('comments', () => {
     const expected = [
-      { type: 'identifier', value: 'x' },
-      { type: 'operator', value: '=' },
-      { type: 'operator', value: '-' },
-      { type: 'number', value: '192' }
+      { type: 'identifier', value: 'x', prefixed: '' },
+      { type: 'operator', value: '=', prefixed: ' /* what is /**x**? ***/ /*:)*/ /**/ ' },
+      { type: 'operator', value: '-', prefixed: ' ' },
+      { type: 'number', value: '192', prefixed: '' }
     ]
     const scanned = scan('x /* what is /**x**? ***/ /*:)*/ /**/ = -192 // A negative number\n')
     scanned.forEach((x) => delete x.position)
@@ -98,7 +98,7 @@ describe('scan', () => {
       { type: 'semicolon', value: ';' }
     ]
     const scanned = scan('x *=-.6++ >= 2 && 8;')
-    scanned.forEach((x) => delete x.position)
+    scanned.forEach((x) => { delete x.position; delete x.prefixed })
     expect(scanned).toStrictEqual(expected)
   })
 
@@ -114,7 +114,7 @@ describe('scan', () => {
     ]
 
     const scanned = scan('#version 100\nconst int x = 0;')
-    scanned.forEach((x) => delete x.position)
+    scanned.forEach((x) => { delete x.position; delete x.prefixed })
     expect(scanned).toStrictEqual(expected)
   })
 })
