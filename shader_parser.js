@@ -8,18 +8,25 @@ import { Stream } from './stream.js'
 export function parse (tokens /* : Array<Token> */) /* : Ast */ {
   const tokenStream = new Stream(tokens)
   const result = []
-  while (!tokenStream.atEnd()) {
-    result.push(parseTopLevel(tokenStream))
+  while (!tokenStream.peek().type !== 'EOF') {
+    const definition = parseTopLevel(tokenStream)
+    if (!definition) {
+      break
+    }
+    result.push(definition)
   }
+  parseToken(tokenStream, 'EOF')
   return result
 }
 
 //
 // Top Level Definitions
 //
-function parseTopLevel (tokenStream /* : Stream<Token> */) {
+function parseTopLevel (tokenStream /* : Stream<Token> */) /* : Ast | void */{
   const token = tokenStream.peek()
   switch (token.type) {
+    case 'EOF':
+      return
     case 'keyword':
       switch (token.value) {
         case 'const':

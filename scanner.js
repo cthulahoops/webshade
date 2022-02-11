@@ -19,10 +19,10 @@ export function scan (string /* : string */) /* : Array<Token> */ {
 
   while (true) {
     const token = parseToken(characterStream)
+    result.push(token)
     if (token.type === 'EOF') {
       break
     }
-    result.push(token)
   }
 
   return result
@@ -85,6 +85,15 @@ function parseToken (characterStream /* : Stream<string> */) /* : Token */ {
     throw Error('Unexpected character: ' + character)
   }
   return { type: 'EOF', value: '', position: characterStream.position, prefixed }
+}
+
+export function tokensToSource (tokens /* : Array<Token> */) /* : string */ {
+  let result = ''
+  for (const token of tokens) {
+    result += token.prefixed
+    result += token.value
+  }
+  return result
 }
 
 function isDigit (character) {
