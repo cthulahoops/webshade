@@ -52,7 +52,7 @@ KEY_MAP.set('a', new Vector(-1, 0, 0))
 KEY_MAP.set('e', new Vector(1, 0, 0))
 KEY_MAP.set('d', new Vector(1, 0, 0))
 
-class Camera {
+export class Camera {
   /* :: _position : Vector */
   /* :: velocity : Vector */
   /* :: rotation : { x: number, y: number } */
@@ -102,7 +102,7 @@ class Camera {
   }
 }
 
-window.onload = init
+// window.onload = init
 
 async function selectFragmentShader (shaderAnimation, select /*: HTMLSelectElement */) {
   const selectedProgram = select.selectedOptions[0].value
@@ -134,7 +134,7 @@ async function textareaUpdated (shaderAnimation) {
   changeFragmentShader(shaderAnimation, getShaderSourceTextArea().value)
 }
 
-class ShaderAnimation {
+export class ShaderAnimation {
   /* :: startTime: number */
   /* :: lastTime: number */
   /* :: frames: number */
@@ -222,7 +222,7 @@ class ShaderAnimation {
 
     const vertexShader = this.compileShader(
       gl.VERTEX_SHADER,
-      getVertexScriptElement().text)
+      vertexShaderText)
 
     const fragmentShader = this.compileShader(
       gl.FRAGMENT_SHADER,
@@ -351,7 +351,7 @@ function setSelectedOption (select /* : HTMLSelectElement */, value) {
 }
 
 function getShaderSourceTextArea () /* HTMLTextAreaElement */ {
-  return getElementByIdTyped('shader_source', window.HTMLTextAreaElement)
+  return window.document.getElementById('shader_source')
 }
 
 function getShaderSelectElement () /* : HTMLSelectElement */ {
@@ -366,9 +366,14 @@ function getInputElement (id) /* : HTMLInputElement */ {
   return getElementByIdTyped(id, window.HTMLInputElement)
 }
 
-function getVertexScriptElement () /* : HTMLScriptElement */ {
-  return getElementByIdTyped('2d-vertex-shader', window.HTMLScriptElement)
+const vertexShaderText = `#version 100
+
+attribute vec2 a_position;
+
+void main() {
+    gl_Position = vec4(a_position, 0, 1);
 }
+`
 
 function getDivElement (id) /* : HTMLDivElement */ {
   return getElementByIdTyped(id, window.HTMLDivElement)

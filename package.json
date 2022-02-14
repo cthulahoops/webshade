@@ -32,12 +32,17 @@
     "babel-cli": "^6.26.0",
     "babel-jest": "^27.4.6",
     "flow": "^0.2.3",
-    "flow-bin": "^0.170.0",
-    "jest": "^27.4.7"
+    "flow-bin": "^0.171.0",
+    "jest": "^27.4.7",
+    "parcel": "^2.3.1"
   },
   "dependencies": {
     "@babel/preset-env": "^7.16.11",
-    "npx": "^3.0.0",
+    "@babel/preset-react": "^7.16.7",
+    "npx": "^10.2.2",
+    "prism": "^4.1.2",
+    "prismjs": "^1.26.0",
+    "react-simple-code-editor": "^0.11.0",
     "standard-flow": "^1.0.0"
   }
 }

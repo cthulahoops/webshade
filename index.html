@@ -1,45 +1,21 @@
+<!doctype html>
 <html>
 <head>
 <meta charset="utf-8"/>
 <link rel="stylesheet" href="style.css">
-<script id="2d-vertex-shader" type="x-shader/x-vertex">#version 100
-
-attribute vec2 a_position;
-
-void main() {
-    gl_Position = vec4(a_position, 0, 1);
-}
+<link rel="stylesheet" href="prism.css">
 </script>
 <script type="module" src="main.js"></script>
+
+<script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+<script type="module" src="./src/index.jsx" defer></script>
+
 </head>
 
 <body>
-<div class=grid_container>
-    <div class="canvas">
-        <canvas id="glscreen"></canvas>
-        <div>
-            <select id="shader-selection" onchange="selectFragmentShader(this)">
-                <option>geometry.frag</option>
-                <option>cone.frag</option>
-                <option>marching.frag</option>
-                <option>manyspheres.frag</option>
-                <option>mixing.frag</option>
-                <option>simple.frag</option>
-                <option>wheel.frag</option>
-            </select>
-            <button onclick="refetchCode()">Refetch code</button>
-            FPS = <span id=fps></span>
-        </div>
-        <ul id="uniforms">
 
-        </ul>
-    </div>
-    <div class="source">
-        <textarea id=shader_source cols=100 rows=30 onchange="textareaUpdated()">
-        </textarea>
-    </div>
-    <div id="errors">
-    </div>
-</div>
+<div id=app></div>
+
 </body>
 </html>
