@@ -1,17 +1,33 @@
 import React from 'react'
+import ReactDOM from 'react-dom'
 
 import Editor from 'react-simple-code-editor'
 import { highlight, languages } from 'prismjs/components/prism-core'
 import 'prismjs/components/prism-clike'
-import 'prismjs/components/prism-javascript'
+import 'prismjs/components/prism-c'
+import 'prismjs/components/prism-glsl'
 
 import { ShaderAnimation, Camera } from '../main.js'
 
-class GLCanvas extends React.Component {
+console.log(languages)
+
+class App extends React.Component {
   constructor (props) {
-    console.log("GL canvas created!")
     super(props)
-    this.state = {}
+    this.state = { code: '' }
+
+    this.selectShader('geometry.frag')
+  }
+
+  setCode (code) {
+    this.setState({ code: code })
+  }
+
+  async selectShader (shaderName) {
+    const shaderResponse = await window.fetch(shaderName)
+    const shaderSource = await shaderResponse.text()
+    this.setCode(shaderSource)
+    console.log(shaderName)
   }
 
   mountCanvas (canvasElement) {
@@ -28,40 +44,16 @@ class GLCanvas extends React.Component {
     this.animation.renderLoop()
   }
 
-  setCode( shaderSource ) {
-    this.animation.updateFragmentShader(shaderSource, [])
-  }
-
   render () {
     if (this.animation) {
-      this.animation.updateFragmentShader(this.props.code, [])
+      console.log("Updating and compiling new fragment shader.")
+      this.animation.updateFragmentShader(this.state.code, [])
     }
-    return <canvas ref={(element) => this.mountCanvas(element)} id='glscreen' />
-  }
-}
 
-class App extends React.Component {
-  constructor (props) {
-    super(props)
-    this.state = { code: '#version 100;\nvoid main() { gl_FragColor = vec4(1, 0, 0, 0); }' }
-  }
-
-  setCode (code) {
-    this.setState({ code: code })
-  }
-
-  async selectShader (shaderName) {
-    const shaderResponse = await window.fetch(shaderName)
-    const shaderSource = await shaderResponse.text()
-    this.setCode(shaderSource)
-    console.log(shaderName)
-  }
-
-  render () {
     return (
       <div className='grid_container'>
         <div className='canvas'>
-          <GLCanvas code={this.state.code} />
+          <canvas ref={(element) => this.mountCanvas(element)} id='glscreen' />
 
           <select id='shader-selection' onChange={(event) => this.selectShader(event.target.value)}>
             <option>geometry.frag</option>
@@ -77,7 +69,7 @@ class App extends React.Component {
         </div>
 
         <div className='source'>
-          <Editor id='shader_source' value={this.state.code} onValueChange={(code) => this.setCode(code)} highlight={(code) => highlight(code, languages.javascript)} cols={120} />
+          <Editor id='shader_source' value={this.state.code} onValueChange={(code) => this.setCode(code)} highlight={(code) => highlight(code, languages.glsl)} cols={120} />
         </div>
         <div id='errors' />
       </div>
