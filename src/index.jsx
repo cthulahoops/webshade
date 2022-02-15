@@ -24,7 +24,7 @@ function tokenAt (tokens, position) {
       return token.value
     }
   }
-  return 'meh'
+  return 'no valid token!'
 }
 
 const compileRender = debounce((animation, source) => {
@@ -66,7 +66,13 @@ function App () {
     compileRender(animation, code)
   }, [animation, code])
 
-  const tokens = useMemo(() => scan(code), [code])
+  const tokens = useMemo(() => {
+    try {
+      return scan(code)
+    } catch (err) {
+      return []
+    }
+  }, [code])
   const currentToken = useMemo(() => tokenAt(tokens, selectionStart), [tokens, selectionStart])
 
   return (
