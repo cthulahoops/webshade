@@ -9,7 +9,18 @@ import 'prismjs/components/prism-glsl'
 
 import { ShaderAnimation, Camera } from '../main.js'
 
-console.log(languages)
+function debounce (callbackFunction, delay) {
+  let timer
+  return (...args) => {
+    clearTimeout(timer)
+    timer = setTimeout(() => callbackFunction(...args), delay)
+  }
+}
+
+const compileRender = debounce((animation, source) => {
+  console.log('Debounced: Updating and compiling shader!')
+  animation.updateFragmentShader(source, [])
+}, 1000)
 
 class App extends React.Component {
   constructor (props) {
@@ -46,8 +57,7 @@ class App extends React.Component {
 
   render () {
     if (this.animation) {
-      console.log("Updating and compiling new fragment shader.")
-      this.animation.updateFragmentShader(this.state.code, [])
+      compileRender(this.animation, this.state.code)
     }
 
     return (
