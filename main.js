@@ -176,7 +176,7 @@ export class ShaderAnimation {
       this.render(time)
 
       if (this.frames >= 100) {
-        getFPSSpan().textContent = Math.round(this.frames / (time - this.lastTime)).toString()
+        // getFPSSpan().textContent = Math.round(this.frames / (time - this.lastTime)).toString()
 
         this.frames = 0
         this.lastTime = time
@@ -382,7 +382,7 @@ function getDivElement (id) /* : HTMLDivElement */ {
 function getElementByIdTyped (id, type) {
   const element = document.getElementById(id)
   if (!(element instanceof type)) {
-    throw Error('Unexpected HTMLElement')
+    throw Error('Unexpected HTMLElement ' + element)
   }
   return element
 }

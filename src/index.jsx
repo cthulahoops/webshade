@@ -8,6 +8,7 @@ import 'prismjs/components/prism-c'
 import 'prismjs/components/prism-glsl'
 
 import { ShaderAnimation, Camera } from '../main.js'
+import { scan } from '../scanner.js'
 
 function debounce (callbackFunction, delay) {
   let timer
@@ -15,6 +16,15 @@ function debounce (callbackFunction, delay) {
     clearTimeout(timer)
     timer = setTimeout(() => callbackFunction(...args), delay)
   }
+}
+
+function tokenAt (tokens, position) {
+  for (const token of tokens) {
+    if (token.position + token.value.length >= position) {
+      return token.value
+    }
+  }
+  return 'meh'
 }
 
 const compileRender = debounce((animation, source) => {
@@ -82,7 +92,7 @@ class App extends React.Component {
             {this.state.selectionStart},
             {this.state.selectionEnd}
           </div>
-          <pre>{this.state.code.substr(this.state.selectionStart, this.state.selectionEnd - this.state.selectionStart)}</pre>
+          <pre>{tokenAt(scan(this.state.code), this.state.selectionEnd)}</pre>
           <ul id='uniforms' />
         </div>
 
