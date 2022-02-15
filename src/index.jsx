@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import ReactDOM from 'react-dom'
 
 import Editor from './simple-editor.jsx'
@@ -20,7 +20,7 @@ function debounce (callbackFunction, delay) {
 
 function tokenAt (tokens, position) {
   for (const token of tokens) {
-    if (token.position + token.value.length >= position) {
+    if (token.position + token.value.length > position) {
       return token.value
     }
   }
@@ -32,86 +32,83 @@ const compileRender = debounce((animation, source) => {
   animation.updateFragmentShader(source, [])
 }, 1000)
 
-class App extends React.Component {
-  constructor (props) {
-    super(props)
-    this.state = {
-      code: '',
-      selectionStart: 0,
-      selectionEnd: 0
-    }
+async function selectShader (shaderName, setCode) {
+  const shaderResponse = await window.fetch(shaderName)
+  const shaderSource = await shaderResponse.text()
+  setCode(shaderSource)
+  console.log(shaderName)
+}
 
-    this.selectShader('geometry.frag')
-  }
+function App () {
+  const [code, setCode] = useState('#version 100\n')
+  const [selectionStart, setSelectionStart] = useState(0)
+  const [selectionEnd, setSelectionEnd] = useState(0)
+  const [shader, setShader] = useState('geometry.frag')
+  const [canvas, setCanvas] = useState()
+  const [animation, setAnimation] = useState()
 
-  setCode (code) {
-    this.setState({ code: code })
-    if (this.animation) {
-      compileRender(this.animation, this.state.code)
-    }
-  }
-
-  async selectShader (shaderName) {
-    const shaderResponse = await window.fetch(shaderName)
-    const shaderSource = await shaderResponse.text()
-    this.setCode(shaderSource)
-    console.log(shaderName)
-  }
-
-  mountCanvas (canvasElement) {
-    if (!canvasElement) {
+  useEffect(() => {
+    if (!canvas) {
       return
     }
-    if (this.animation) {
-      return
-    }
-    console.log('Mounted canvas: ', canvasElement)
     const camera = new Camera(0, 1, 0)
-    this.animation = new ShaderAnimation(canvasElement, camera)
-    this.animation.renderLoop()
-    compileRender(this.animation, this.state.code)
-  }
+    const newAnimation = new ShaderAnimation(canvas, camera)
+    newAnimation.renderLoop()
+    setAnimation(newAnimation)
+  }, [canvas])
 
-  render () {
-    return (
-      <div className='grid_container'>
-        <div className='canvas'>
-          <canvas ref={(element) => this.mountCanvas(element)} id='glscreen' />
+  useEffect(() => {
+    console.log('Shader selected: ', shader)
+    selectShader(shader, setCode)
+  }, [shader])
 
-          <select id='shader-selection' onChange={(event) => this.selectShader(event.target.value)}>
-            <option>geometry.frag</option>
-            <option>cone.frag</option>
-            <option>marching.frag</option>
-            <option>manyspheres.frag</option>
-            <option>mixing.frag</option>
-            <option>simple.frag</option>
-            <option>wheel.frag</option>
-          </select>
-          FPS = <span id='fps' />
-          <div>
-            {this.state.selectionStart},
-            {this.state.selectionEnd}
-          </div>
-          <pre>{tokenAt(scan(this.state.code), this.state.selectionEnd)}</pre>
-          <ul id='uniforms' />
+  useEffect(() => {
+    compileRender(animation, code)
+  }, [animation, code])
+
+  const tokens = useMemo(() => scan(code), [code])
+  const currentToken = useMemo(() => tokenAt(tokens, selectionStart), [tokens, selectionStart])
+
+  return (
+    <div className='grid_container'>
+      <div className='canvas'>
+        <canvas ref={setCanvas} id='glscreen' />
+
+        <select id='shader-selection' onChange={(event) => setShader(event.target.value)}>
+          <option>geometry.frag</option>
+          <option>cone.frag</option>
+          <option>marching.frag</option>
+          <option>manyspheres.frag</option>
+          <option>mixing.frag</option>
+          <option>simple.frag</option>
+          <option>wheel.frag</option>
+        </select>
+        FPS = <span id='fps' />
+        <div>
+          {selectionStart},
+          {selectionEnd}
         </div>
-
-        <div className='source'>
-          <Editor
-            id='shader_source'
-            value={this.state.code}
-            onValueChange={(code) => this.setCode(code)}
-            onSelectionChange={
-              (event) =>
-                this.setState({ selectionStart: event.target.selectionStart, selectionEnd: event.target.selectionEnd })
-            }
-            highlight={(code) => highlight(code, languages.glsl)}
-          />
-        </div>
-        <div id='errors' />
+        <div>{currentToken}</div>
+        <ul id='uniforms' />
       </div>
-    )
-  }
+
+      <div className='source'>
+        <Editor
+          id='shader_source'
+          value={code}
+          onValueChange={setCode}
+          onSelectionChange={
+            (event) => {
+              setSelectionStart(event.target.selectionStart)
+              setSelectionEnd(event.target.setSelectionEnd)
+            }
+          }
+          highlight={(code) => highlight(code, languages.glsl)}
+        />
+      </div>
+      <div id='errors' />
+    </div>
+  )
 }
 
 ReactDOM.render(<App />, document.getElementById('app'))
