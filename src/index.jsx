@@ -7,7 +7,7 @@ import 'prismjs/components/prism-clike'
 import 'prismjs/components/prism-c'
 import 'prismjs/components/prism-glsl'
 
-import { ShaderAnimation, Camera } from '../main.js'
+import { ShaderAnimation, Camera } from './animation.js'
 import { scan } from '../scanner.js'
 
 function debounce (callbackFunction, delay) {
