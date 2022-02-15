@@ -6,7 +6,7 @@ label {
 .grid_container {
 	display: grid;
 	height: 100vh;
-	grid-template-columns: 800px 400px;
+	grid-template-columns: 800px 800px;
 	grid-template-areas:
 		"canvas source"
 		"errors errors"
