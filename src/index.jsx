@@ -102,7 +102,15 @@ function App () {
   return (
     <div className='grid_container'>
       <div className='canvas'>
-        <canvas ref={canvas} id='glscreen' />
+        <canvas
+          tabIndex={-1}
+          ref={canvas}
+          id='glscreen'
+          onClick={() => canvas.current.requestPointerLock()}
+          onMouseMove={(event) => animation.current.camera.handleMouseMove(event)}
+          onKeyDown={(event) => animation.current.camera.handleKeyDown(event)}
+          onKeyUp={(event) => animation.current.camera.handleKeyUp(event)}
+        />
 
         <select id='shader-selection' onChange={(event) => setShader(event.target.value)}>
           <option>geometry.frag</option>

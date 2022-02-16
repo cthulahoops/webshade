@@ -11,6 +11,8 @@ export class Camera {
     this._position = new Vector(x, y, z)
     this.velocity = new Vector(0, 0, 0)
     this.rotation = { x: 0, y: 0 }
+
+    window.setInterval(() => this.tick(), 50)
   }
 
   get position () /* : [ number, number, number ] */ {
