@@ -20,7 +20,8 @@ function debounce (callbackFunction, delay) {
 
 function tokenAt (tokens, position) {
   for (const token of tokens) {
-    if (token.position + token.value.length > position) {
+    const tokenEndPosition = token.position + token.value.length
+    if (tokenEndPosition > position || (token.type === 'number' && tokenEndPosition === position)) {
       return token
     }
   }
