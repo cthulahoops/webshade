@@ -46,7 +46,10 @@ function Token (props) {
   if (!props.token) {
     return <span>No current token.</span>
   }
-  return <div>{props.token.type}<input value={props.token.value} onChange={(event) => props.onChange(event.target.value)} /></div>
+  if (props.token.type === 'number') {
+    return <div>{props.token.type}<input type='range' value={props.token.value} onChange={(event) => props.onChange(event.target.value)} /></div>
+  }
+  return <div>{props.token.type} {props.token.value}</div>
 }
 
 function App () {
