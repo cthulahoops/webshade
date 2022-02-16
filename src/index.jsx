@@ -30,7 +30,7 @@ function tokenAt (tokens, position) {
 const compileRender = debounce((animation, source) => {
   console.log('Debounced: Updating and compiling shader!')
   animation.updateFragmentShader(source, [])
-}, 1000)
+}, 200)
 
 async function selectShader (shaderName, setCode) {
   const shaderResponse = await window.fetch(shaderName)
