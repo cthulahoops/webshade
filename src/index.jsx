@@ -108,7 +108,7 @@ function App () {
           onSelectionChange={
             (event) => {
               setSelectionStart(event.target.selectionStart)
-              setSelectionEnd(event.target.setSelectionEnd)
+              setSelectionEnd(event.target.selectionEnd)
             }
           }
           highlight={(code) => highlight(code, languages.glsl)}
