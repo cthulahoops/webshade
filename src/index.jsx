@@ -46,13 +46,14 @@ function App () {
   const [shader, setShader] = useState('geometry.frag')
   const [canvas, setCanvas] = useState()
   const [animation, setAnimation] = useState()
+  const [errors, setErrors] = useState('')
 
   useEffect(() => {
     if (!canvas) {
       return
     }
     const camera = new Camera(0, 1, 0)
-    const newAnimation = new ShaderAnimation(canvas, camera)
+    const newAnimation = new ShaderAnimation(canvas, camera, setErrors)
     newAnimation.renderLoop()
     setAnimation(newAnimation)
   }, [canvas])
@@ -96,6 +97,7 @@ function App () {
         </div>
         <div>{currentToken}</div>
         <ul id='uniforms' />
+        <pre>{errors}</pre>
       </div>
 
       <div className='source'>
@@ -112,7 +114,6 @@ function App () {
           highlight={(code) => highlight(code, languages.glsl)}
         />
       </div>
-      <div id='errors' />
     </div>
   )
 }

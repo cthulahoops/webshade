@@ -62,7 +62,8 @@ export class ShaderAnimation {
   /* :: uniforms: Array<string> */
   /* :: camera: Camera */
 
-  constructor (canvas /*: HTMLCanvasElement */, camera /* : Camera */) {
+  constructor (canvas /*: HTMLCanvasElement */, camera /* : Camera */, errorCallback) {
+    this.errorCallback = errorCallback
     this.startTime = window.performance.now()
     this.lastTime = this.startTime
     this.frames = 0
@@ -159,14 +160,12 @@ export class ShaderAnimation {
 
     gl.validateProgram(program)
 
-    //   const errorLog = getDivElement('errors')
-
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      // const info = gl.getProgramInfoLog(program)
-      //      errorLog.textContent = info || 'missing program error log'
+      const info = gl.getProgramInfoLog(program)
+      this.errorCallback(info || 'missing program error log')
       return
     }
-    //  errorLog.textContent = ''
+    this.errorCallback('')
 
     gl.useProgram(program)
     this.program = program
