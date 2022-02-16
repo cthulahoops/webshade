@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import ReactDOM from 'react-dom'
 
 import Editor from './simple-editor.jsx'
@@ -54,18 +54,19 @@ function App () {
   const [selectionStart, setSelectionStart] = useState(0)
   const [selectionEnd, setSelectionEnd] = useState(0)
   const [shader, setShader] = useState('geometry.frag')
-  const [canvas, setCanvas] = useState()
-  const [animation, setAnimation] = useState()
   const [errors, setErrors] = useState('')
 
+  const canvas = useRef()
+  const animation = useRef()
+
   useEffect(() => {
-    if (!canvas) {
+    if (!canvas.current) {
       return
     }
     const camera = new Camera(0, 1, 0)
-    const newAnimation = new ShaderAnimation(canvas, camera, setErrors)
+    const newAnimation = new ShaderAnimation(canvas.current, camera, setErrors)
     newAnimation.renderLoop()
-    setAnimation(newAnimation)
+    animation.current = newAnimation
   }, [canvas])
 
   useEffect(() => {
@@ -74,7 +75,7 @@ function App () {
   }, [shader])
 
   useEffect(() => {
-    compileRender(animation, code)
+    compileRender(animation.current, code)
   }, [animation, code])
 
   const tokens = useMemo(() => {
@@ -97,7 +98,7 @@ function App () {
   return (
     <div className='grid_container'>
       <div className='canvas'>
-        <canvas ref={setCanvas} id='glscreen' />
+        <canvas ref={canvas} id='glscreen' />
 
         <select id='shader-selection' onChange={(event) => setShader(event.target.value)}>
           <option>geometry.frag</option>
@@ -111,7 +112,7 @@ function App () {
         FPS = <span id='fps' />
         <div>Selection: {selectionStart}-{selectionEnd}</div>
         <div>Current token: <Token token={currentToken} onChange={updateToken} /></div>
-        <div>Camera position: {animation ? animation.camera.position : ''}</div>
+        <div>Camera position: {animation.current ? animation.current.camera.position : ''}</div>
         <ul id='uniforms' />
         <pre>{errors}</pre>
       </div>
