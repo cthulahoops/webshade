@@ -21,10 +21,9 @@ function debounce (callbackFunction, delay) {
 function tokenAt (tokens, position) {
   for (const token of tokens) {
     if (token.position + token.value.length > position) {
-      return token.value
+      return token
     }
   }
-  return 'no valid token!'
 }
 
 const compileRender = debounce((animation, source) => {
@@ -37,6 +36,17 @@ async function selectShader (shaderName, setCode) {
   const shaderSource = await shaderResponse.text()
   setCode(shaderSource)
   console.log(shaderName)
+}
+
+function stringSplice (string, position, oldLength, value) {
+  return string.substr(0, position) + value + string.substr(position + oldLength)
+}
+
+function Token (props) {
+  if (!props.token) {
+    return <span>No current token.</span>
+  }
+  return <div>{props.token.type}<input value={props.token.value} onChange={(event) => props.onChange(event.target.value)} /></div>
 }
 
 function App () {
@@ -76,6 +86,14 @@ function App () {
   }, [code])
   const currentToken = useMemo(() => tokenAt(tokens, selectionStart), [tokens, selectionStart])
 
+  const updateToken = (value) => {
+    if (!value) {
+      return
+    }
+    const newCode = stringSplice(code, currentToken.position, currentToken.value.length, value)
+    setCode(newCode)
+  }
+
   return (
     <div className='grid_container'>
       <div className='canvas'>
@@ -91,11 +109,9 @@ function App () {
           <option>wheel.frag</option>
         </select>
         FPS = <span id='fps' />
-        <div>
-          {selectionStart},
-          {selectionEnd}
-        </div>
-        <div>{currentToken}</div>
+        <div>Selection: {selectionStart}-{selectionEnd}</div>
+        <div>Current token: <Token token={currentToken} onChange={updateToken} /></div>
+        <div>Camera position: {animation ? animation.camera.position : ''}</div>
         <ul id='uniforms' />
         <pre>{errors}</pre>
       </div>
@@ -107,6 +123,10 @@ function App () {
           onValueChange={setCode}
           onSelectionChange={
             (event) => {
+              console.log(event)
+              if (event.target.selectionStart === event.target.textLength) {
+                return
+              }
               setSelectionStart(event.target.selectionStart)
               setSelectionEnd(event.target.selectionEnd)
             }
