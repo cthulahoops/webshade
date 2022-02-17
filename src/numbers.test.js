@@ -8,8 +8,8 @@ test.each([
   ['0.0005', { min: '0.0001', max: '0.0009', step: '0.0001' }],
   ['400', { min: '100', max: '999', step: '001' }],
   ['21.', { min: '10.', max: '99.', step: '01' }]
-])('bracket-%s', (number, range) => {
-  expect(bracket(number)).toEqual(range)
+])('sliderRange-%s', (number, range) => {
+  expect(sliderRange(number)).toEqual(range)
 })
 
 test.each([
