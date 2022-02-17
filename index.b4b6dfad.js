@@ -855,37 +855,7 @@ _reactDomDefault.default.render(/*#__PURE__*/ _reactDefault.default.createElemen
   window.$RefreshReg$ = prevRefreshReg;
   window.$RefreshSig$ = prevRefreshSig;
 }
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","react":"21dqq","react-dom":"j6uA9","@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"km3Ru","prismjs/components/prism-core":"dRApq","prismjs/components/prism-clike":"ioeQR","prismjs/components/prism-c":"4x4rq","prismjs/components/prism-glsl":"P0vrO","../scanner.js":"4VGNy","./simple-editor.jsx":"j1M8a","./animation.js":"k5ez6","./numbers.js":"9uLzp"}],"gkKU3":[function(require,module,exports) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
-    };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, '__esModule', {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === 'default' || key === '__esModule' || dest.hasOwnProperty(key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
-
-},{}],"21dqq":[function(require,module,exports) {
+},{"react":"21dqq","react-dom":"j6uA9","./simple-editor.jsx":"j1M8a","prismjs/components/prism-core":"dRApq","prismjs/components/prism-clike":"ioeQR","prismjs/components/prism-c":"4x4rq","prismjs/components/prism-glsl":"P0vrO","./animation.js":"k5ez6","../scanner.js":"4VGNy","./numbers.js":"9uLzp","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"km3Ru"}],"21dqq":[function(require,module,exports) {
 'use strict';
 module.exports = require('./cjs/react.development.js');
 
@@ -21003,6 +20973,533 @@ module.exports = require('./cjs/scheduler-tracing.development.js');
     exports.unstable_wrap = unstable_wrap;
 })();
 
+},{}],"j1M8a":[function(require,module,exports) {
+var $parcel$ReactRefreshHelpers$c71b = require("@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js");
+var prevRefreshReg = window.$RefreshReg$;
+var prevRefreshSig = window.$RefreshSig$;
+$parcel$ReactRefreshHelpers$c71b.prelude(module);
+
+try {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+/* global global */ //
+// Based upon: https://github.com/satya164/react-simple-code-editor/
+//
+// The MIT License (MIT)
+//
+// Copyright (C) 2018 - 2019
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to
+// deal in the Software without restriction, including without limitation the
+// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+// sell copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+//   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+//   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+//   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+//   DEALINGS IN THE SOFTWARE.
+var _react = require("react");
+var global = arguments[3];
+const KEYCODE_ENTER = 13;
+const KEYCODE_TAB = 9;
+const KEYCODE_BACKSPACE = 8;
+const KEYCODE_Y = 89;
+const KEYCODE_Z = 90;
+const KEYCODE_M = 77;
+const KEYCODE_PARENS = 57;
+const KEYCODE_BRACKETS = 219;
+const KEYCODE_QUOTE = 222;
+const KEYCODE_BACK_QUOTE = 192;
+const KEYCODE_ESCAPE = 27;
+const HISTORY_LIMIT = 100;
+const HISTORY_TIME_GAP = 3000;
+const isWindows = 'navigator' in global && /Win/i.test(navigator.platform);
+const isMacLike = 'navigator' in global && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
+const className = 'npm__react-simple-code-editor__textarea';
+const cssText = /* CSS */ `
+/**
+ * Reset the text fill color so that placeholder is visible
+ */
+.${className}:empty {
+  -webkit-text-fill-color: inherit !important;
+}
+
+/**
+ * Hack to apply on some CSS on IE10 and IE11
+ */
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  /**
+    * IE doesn't support '-webkit-text-fill-color'
+    * So we use 'color: transparent' to make the text transparent on IE
+    * Unlike other browsers, it doesn't affect caret color in IE
+    */
+  .${className} {
+    color: transparent !important;
+  }
+
+  .${className}::selection {
+    background-color: #accef7 !important;
+    color: transparent !important;
+  }
+}
+`;
+class Editor extends _react.Component {
+    static defaultProps = {
+        tabSize: 2,
+        insertSpaces: true,
+        ignoreTabKey: false,
+        padding: 0
+    };
+    state = {
+        capture: true
+    };
+    componentDidMount() {
+        this._recordCurrentState();
+    }
+    _recordCurrentState = ()=>{
+        const input = this._input;
+        if (!input) return; // Save current state of the input
+        const { value , selectionStart , selectionEnd  } = input;
+        this._recordChange({
+            value,
+            selectionStart,
+            selectionEnd
+        });
+    };
+    _getLines = (text, position)=>text.substring(0, position).split('\n')
+    ;
+    _recordChange = (record, overwrite = false)=>{
+        const { stack , offset  } = this._history;
+        if (stack.length && offset > -1) {
+            // When something updates, drop the redo operations
+            this._history.stack = stack.slice(0, offset + 1); // Limit the number of operations to 100
+            const count = this._history.stack.length;
+            if (count > HISTORY_LIMIT) {
+                const extras = count - HISTORY_LIMIT;
+                this._history.stack = stack.slice(extras, count);
+                this._history.offset = Math.max(this._history.offset - extras, 0);
+            }
+        }
+        const timestamp = Date.now();
+        if (overwrite) {
+            const last = this._history.stack[this._history.offset];
+            if (last && timestamp - last.timestamp < HISTORY_TIME_GAP) {
+                // A previous entry exists and was in short interval
+                // Match the last word in the line
+                const re = /[^a-z0-9]([a-z0-9]+)$/i; // Get the previous line
+                const previous = this._getLines(last.value, last.selectionStart).pop().match(re); // Get the current line
+                const current = this._getLines(record.value, record.selectionStart).pop().match(re);
+                if (previous && current && current[1].startsWith(previous[1])) {
+                    // The last word of the previous line and current line match
+                    // Overwrite previous entry so that undo will remove whole word
+                    this._history.stack[this._history.offset] = {
+                        ...record,
+                        timestamp
+                    };
+                    return;
+                }
+            }
+        } // Add the new operation to the stack
+        this._history.stack.push({
+            ...record,
+            timestamp
+        });
+        this._history.offset++;
+    };
+    _updateInput = (record)=>{
+        const input = this._input;
+        if (!input) return; // Update values and selection state
+        input.value = record.value;
+        input.selectionStart = record.selectionStart;
+        input.selectionEnd = record.selectionEnd;
+        this.props.onValueChange(record.value);
+    };
+    _applyEdits = (record)=>{
+        // Save last selection state
+        const input = this._input;
+        const last = this._history.stack[this._history.offset];
+        if (last && input) this._history.stack[this._history.offset] = {
+            ...last,
+            selectionStart: input.selectionStart,
+            selectionEnd: input.selectionEnd
+        };
+         // Save the changes
+        this._recordChange(record);
+        this._updateInput(record);
+    };
+    _undoEdit = ()=>{
+        const { stack , offset  } = this._history; // Get the previous edit
+        const record = stack[offset - 1];
+        if (record) {
+            // Apply the changes and update the offset
+            this._updateInput(record);
+            this._history.offset = Math.max(offset - 1, 0);
+        }
+    };
+    _redoEdit = ()=>{
+        const { stack , offset  } = this._history; // Get the next edit
+        const record = stack[offset + 1];
+        if (record) {
+            // Apply the changes and update the offset
+            this._updateInput(record);
+            this._history.offset = Math.min(offset + 1, stack.length - 1);
+        }
+    };
+    _handleKeyDown = (e)=>{
+        const { tabSize , insertSpaces , ignoreTabKey , onKeyDown  } = this.props;
+        if (onKeyDown) {
+            onKeyDown(e);
+            if (e.defaultPrevented) return;
+        }
+        if (e.keyCode === KEYCODE_ESCAPE) e.target.blur();
+        const { value , selectionStart , selectionEnd  } = e.target;
+        const tabCharacter = (insertSpaces ? ' ' : '\t').repeat(tabSize);
+        if (e.keyCode === KEYCODE_TAB && !ignoreTabKey && this.state.capture) {
+            // Prevent focus change
+            e.preventDefault();
+            if (e.shiftKey) {
+                // Unindent selected lines
+                const linesBeforeCaret = this._getLines(value, selectionStart);
+                const startLine = linesBeforeCaret.length - 1;
+                const endLine = this._getLines(value, selectionEnd).length - 1;
+                const nextValue = value.split('\n').map((line, i)=>{
+                    if (i >= startLine && i <= endLine && line.startsWith(tabCharacter)) return line.substring(tabCharacter.length);
+                    return line;
+                }).join('\n');
+                if (value !== nextValue) {
+                    const startLineText = linesBeforeCaret[startLine];
+                    this._applyEdits({
+                        value: nextValue,
+                        // Move the start cursor if first line in selection was modified
+                        // It was modified only if it started with a tab
+                        selectionStart: startLineText.startsWith(tabCharacter) ? selectionStart - tabCharacter.length : selectionStart,
+                        // Move the end cursor by total number of characters removed
+                        selectionEnd: selectionEnd - (value.length - nextValue.length)
+                    });
+                }
+            } else if (selectionStart !== selectionEnd) {
+                // Indent selected lines
+                const linesBeforeCaret = this._getLines(value, selectionStart);
+                const startLine = linesBeforeCaret.length - 1;
+                const endLine = this._getLines(value, selectionEnd).length - 1;
+                const startLineText = linesBeforeCaret[startLine];
+                this._applyEdits({
+                    value: value.split('\n').map((line, i)=>{
+                        if (i >= startLine && i <= endLine) return tabCharacter + line;
+                        return line;
+                    }).join('\n'),
+                    // Move the start cursor by number of characters added in first line of selection
+                    // Don't move it if it there was no text before cursor
+                    selectionStart: /\S/.test(startLineText) ? selectionStart + tabCharacter.length : selectionStart,
+                    // Move the end cursor by total number of characters added
+                    selectionEnd: selectionEnd + tabCharacter.length * (endLine - startLine + 1)
+                });
+            } else {
+                const updatedSelection = selectionStart + tabCharacter.length;
+                this._applyEdits({
+                    // Insert tab character at caret
+                    value: value.substring(0, selectionStart) + tabCharacter + value.substring(selectionEnd),
+                    // Update caret position
+                    selectionStart: updatedSelection,
+                    selectionEnd: updatedSelection
+                });
+            }
+        } else if (e.keyCode === KEYCODE_BACKSPACE) {
+            const hasSelection = selectionStart !== selectionEnd;
+            const textBeforeCaret = value.substring(0, selectionStart);
+            if (textBeforeCaret.endsWith(tabCharacter) && !hasSelection) {
+                // Prevent default delete behaviour
+                e.preventDefault();
+                const updatedSelection = selectionStart - tabCharacter.length;
+                this._applyEdits({
+                    // Remove tab character at caret
+                    value: value.substring(0, selectionStart - tabCharacter.length) + value.substring(selectionEnd),
+                    // Update caret position
+                    selectionStart: updatedSelection,
+                    selectionEnd: updatedSelection
+                });
+            }
+        } else if (e.keyCode === KEYCODE_ENTER) // Ignore selections
+        {
+            if (selectionStart === selectionEnd) {
+                // Get the current line
+                const line = this._getLines(value, selectionStart).pop();
+                const matches = line.match(/^\s+/);
+                if (matches && matches[0]) {
+                    e.preventDefault(); // Preserve indentation on inserting a new line
+                    const indent = '\n' + matches[0];
+                    const updatedSelection = selectionStart + indent.length;
+                    this._applyEdits({
+                        // Insert indentation character at caret
+                        value: value.substring(0, selectionStart) + indent + value.substring(selectionEnd),
+                        // Update caret position
+                        selectionStart: updatedSelection,
+                        selectionEnd: updatedSelection
+                    });
+                }
+            }
+        } else if (e.keyCode === KEYCODE_PARENS || e.keyCode === KEYCODE_BRACKETS || e.keyCode === KEYCODE_QUOTE || e.keyCode === KEYCODE_BACK_QUOTE) {
+            let chars;
+            if (e.keyCode === KEYCODE_PARENS && e.shiftKey) chars = [
+                '(',
+                ')'
+            ];
+            else if (e.keyCode === KEYCODE_BRACKETS) {
+                if (e.shiftKey) chars = [
+                    '{',
+                    '}'
+                ];
+                else chars = [
+                    '[',
+                    ']'
+                ];
+            } else if (e.keyCode === KEYCODE_QUOTE) {
+                if (e.shiftKey) chars = [
+                    '"',
+                    '"'
+                ];
+                else chars = [
+                    "'",
+                    "'"
+                ];
+            } else if (e.keyCode === KEYCODE_BACK_QUOTE && !e.shiftKey) chars = [
+                '`',
+                '`'
+            ];
+             // If text is selected, wrap them in the characters
+            if (selectionStart !== selectionEnd && chars) {
+                e.preventDefault();
+                this._applyEdits({
+                    value: value.substring(0, selectionStart) + chars[0] + value.substring(selectionStart, selectionEnd) + chars[1] + value.substring(selectionEnd),
+                    // Update caret position
+                    selectionStart,
+                    selectionEnd: selectionEnd + 2
+                });
+            }
+        } else if ((isMacLike ? e.metaKey && e.keyCode === KEYCODE_Z : e.ctrlKey && e.keyCode === KEYCODE_Z) && !e.shiftKey && !e.altKey) {
+            e.preventDefault();
+            this._undoEdit();
+        } else if ((isMacLike ? e.metaKey && e.keyCode === KEYCODE_Z && e.shiftKey : isWindows ? e.ctrlKey && e.keyCode === KEYCODE_Y : e.ctrlKey && e.keyCode === KEYCODE_Z && e.shiftKey) && !e.altKey) {
+            e.preventDefault();
+            this._redoEdit();
+        } else if (e.keyCode === KEYCODE_M && e.ctrlKey && (isMacLike ? e.shiftKey : true)) {
+            e.preventDefault(); // Toggle capturing tab key so users can focus away
+            this.setState((state)=>({
+                    capture: !state.capture
+                })
+            );
+        }
+    };
+    _handleChange = (e)=>{
+        const { value , selectionStart , selectionEnd  } = e.target;
+        this._recordChange({
+            value,
+            selectionStart,
+            selectionEnd
+        }, true);
+        this.props.onValueChange(value);
+    };
+    _history = {
+        stack: [],
+        offset: -1
+    };
+    get session() {
+        return {
+            history: this._history
+        };
+    }
+    set session(session) {
+        this._history = session.history;
+    }
+    render() {
+        const { value , style , padding , highlight , textareaId , textareaClassName , autoFocus , disabled , form , maxLength , minLength , name , placeholder , readOnly , required , onClick , onFocus , onBlur , onKeyUp , /* eslint-disable no-unused-vars */ onKeyDown , onValueChange , onSelectionChange , tabSize , insertSpaces , ignoreTabKey , /* eslint-enable no-unused-vars */ preClassName , ...rest } = this.props;
+        const contentStyle = {
+            paddingTop: padding,
+            paddingRight: padding,
+            paddingBottom: padding,
+            paddingLeft: padding
+        };
+        const highlighted = highlight(value);
+        return(/*#__PURE__*/ _react.createElement("div", {
+            ...rest,
+            style: {
+                ...styles.container,
+                ...style
+            },
+            __source: {
+                fileName: "src/simple-editor.jsx",
+                lineNumber: 466,
+                columnNumber: 12
+            },
+            __self: this
+        }, /*#__PURE__*/ _react.createElement("textarea", {
+            ref: (c)=>{
+                if (c && !this._input) {
+                    c.addEventListener("selectionchange", onSelectionChange);
+                    this._input = c;
+                }
+            },
+            style: {
+                ...styles.editor,
+                ...styles.textarea,
+                ...contentStyle
+            },
+            className: className + (textareaClassName ? ` ${textareaClassName}` : ''),
+            id: textareaId,
+            value: value,
+            onChange: this._handleChange,
+            onKeyDown: this._handleKeyDown,
+            onClick: onClick,
+            onKeyUp: onKeyUp,
+            onFocus: onFocus,
+            onBlur: onBlur,
+            disabled: disabled,
+            form: form,
+            maxLength: maxLength,
+            minLength: minLength,
+            name: name,
+            placeholder: placeholder,
+            readOnly: readOnly,
+            required: required,
+            autoFocus: autoFocus,
+            autoCapitalize: "off",
+            autoComplete: "off",
+            autoCorrect: "off",
+            spellCheck: false,
+            "data-gramm": false,
+            __source: {
+                fileName: "src/simple-editor.jsx",
+                lineNumber: 469,
+                columnNumber: 9
+            },
+            __self: this
+        }), /*#__PURE__*/ _react.createElement("pre", {
+            className: preClassName,
+            "aria-hidden": "true",
+            style: {
+                ...styles.editor,
+                ...styles.highlight,
+                ...contentStyle
+            },
+            ...typeof highlighted === 'string' ? {
+                dangerouslySetInnerHTML: {
+                    __html: highlighted + '<br />'
+                }
+            } : {
+                children: highlighted
+            },
+            __source: {
+                fileName: "src/simple-editor.jsx",
+                lineNumber: 478,
+                columnNumber: 9
+            },
+            __self: this
+        }), /*#__PURE__*/ _react.createElement("style", {
+            type: "text/css",
+            dangerouslySetInnerHTML: {
+                __html: cssText
+            },
+            __source: {
+                fileName: "src/simple-editor.jsx",
+                lineNumber: 491,
+                columnNumber: 9
+            },
+            __self: this
+        })));
+    }
+}
+exports.default = Editor;
+const styles = {
+    container: {
+        position: 'relative',
+        textAlign: 'left',
+        boxSizing: 'border-box',
+        padding: 0,
+        overflow: 'hidden'
+    },
+    textarea: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        height: '100%',
+        width: '100%',
+        resize: 'none',
+        color: 'inherit',
+        overflow: 'hidden',
+        MozOsxFontSmoothing: 'grayscale',
+        WebkitFontSmoothing: 'antialiased',
+        WebkitTextFillColor: 'transparent'
+    },
+    highlight: {
+        position: 'relative',
+        pointerEvents: 'none'
+    },
+    editor: {
+        margin: 0,
+        border: 0,
+        background: 'none',
+        boxSizing: 'inherit',
+        display: 'inherit',
+        fontFamily: 'inherit',
+        fontSize: 'inherit',
+        fontStyle: 'inherit',
+        fontVariantLigatures: 'inherit',
+        fontWeight: 'inherit',
+        letterSpacing: 'inherit',
+        lineHeight: 'inherit',
+        tabSize: 'inherit',
+        textIndent: 'inherit',
+        textRendering: 'inherit',
+        textTransform: 'inherit',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'keep-all',
+        overflowWrap: 'break-word'
+    }
+};
+
+  $parcel$ReactRefreshHelpers$c71b.postlude(module);
+} finally {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+}
+},{"react":"21dqq","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"km3Ru"}],"gkKU3":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, '__esModule', {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === 'default' || key === '__esModule' || dest.hasOwnProperty(key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
 },{}],"km3Ru":[function(require,module,exports) {
 "use strict";
 var Refresh = require('react-refresh/runtime');
@@ -22692,7 +23189,206 @@ Prism.languages.glsl = Prism.languages.extend('c', {
     'keyword': /\b(?:active|asm|atomic_uint|attribute|[ibdu]?vec[234]|bool|break|buffer|case|cast|centroid|class|coherent|common|const|continue|d?mat[234](?:x[234])?|default|discard|do|double|else|enum|extern|external|false|filter|fixed|flat|float|for|fvec[234]|goto|half|highp|hvec[234]|[iu]?sampler2DMS(?:Array)?|[iu]?sampler2DRect|[iu]?samplerBuffer|[iu]?samplerCube|[iu]?samplerCubeArray|[iu]?sampler[123]D|[iu]?sampler[12]DArray|[iu]?image2DMS(?:Array)?|[iu]?image2DRect|[iu]?imageBuffer|[iu]?imageCube|[iu]?imageCubeArray|[iu]?image[123]D|[iu]?image[12]DArray|if|in|inline|inout|input|int|interface|invariant|layout|long|lowp|mediump|namespace|noinline|noperspective|out|output|partition|patch|precise|precision|public|readonly|resource|restrict|return|sample|sampler[12]DArrayShadow|sampler[12]DShadow|sampler2DRectShadow|sampler3DRect|samplerCubeArrayShadow|samplerCubeShadow|shared|short|sizeof|smooth|static|struct|subroutine|superp|switch|template|this|true|typedef|uint|uniform|union|unsigned|using|varying|void|volatile|while|writeonly)\b/
 });
 
-},{}],"4VGNy":[function(require,module,exports) {
+},{}],"k5ez6":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Camera", ()=>Camera
+);
+parcelHelpers.export(exports, "ShaderAnimation", ()=>ShaderAnimation
+);
+var _vectorJs = require("../vector.js");
+class Camera {
+    /* :: _position : Vector */ /* :: velocity : Vector */ /* :: rotation : { x: number, y: number } */ constructor(x, y, z){
+        this._position = new _vectorJs.Vector(x, y, z);
+        this.velocity = new _vectorJs.Vector(0, 0, 0);
+        this.rotation = {
+            x: 0,
+            y: 0
+        };
+        window.setInterval(()=>this.tick()
+        , 50);
+    }
+    get position() /* : [ number, number, number ] */ {
+        return [
+            this._position.x,
+            this._position.y,
+            this._position.z
+        ];
+    }
+    tick() {
+        this._position = this._position.add(this.velocity.scale(0.2).rotateY(this.rotation.y));
+    }
+    handleMouseMove(event) {
+        if (document.pointerLockElement) {
+            this.rotation.y += event.movementX / 100;
+            this.rotation.x += event.movementY / 100;
+        }
+    }
+    handleKeyDown(event) {
+        if (event.repeat) return;
+        if (!document.pointerLockElement) return;
+        const direction = KEY_MAP.get(event.key);
+        if (direction) this.velocity = this.velocity.add(direction);
+    }
+    handleKeyUp(event) {
+        if (!document.pointerLockElement) return;
+        const direction = KEY_MAP.get(event.key);
+        if (direction) this.velocity = this.velocity.subtract(direction);
+    }
+}
+class ShaderAnimation {
+    /* :: startTime: number */ /* :: lastTime: number */ /* :: frames: number */ /* :: canvas: HTMLCanvasElement */ /* :: gl: WebGLRenderingContext */ /* :: program: any */ /* :: uniforms: Array<string> */ /* :: camera: Camera */ constructor(canvas, camera, errorCallback){
+        this.errorCallback = errorCallback;
+        this.startTime = window.performance.now();
+        this.lastTime = this.startTime;
+        this.frames = 0;
+        this.canvas = canvas;
+        this.camera = camera;
+        const gl = canvas.getContext('experimental-webgl');
+        if (!(gl instanceof window.WebGLRenderingContext)) throw Error("Didn't get a WebGL context.");
+        this.gl = gl;
+        canvas.width = 800;
+        canvas.height = 600;
+        this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
+        this.bindQuadFillingScreen();
+        this.program = null;
+        this.uniforms = [];
+    }
+    renderLoop() {
+        window.requestAnimationFrame(()=>this.renderLoop()
+        , this.canvas);
+        if (this.program) {
+            const time = (window.performance.now() - this.startTime) / 1000;
+            this.render(time);
+            if (this.frames >= 100) {
+                // getFPSSpan().textContent = Math.round(this.frames / (time - this.lastTime)).toString()
+                this.frames = 0;
+                this.lastTime = time;
+            }
+            this.frames += 1;
+        }
+    }
+    render(time) {
+        const gl = this.gl;
+        const program = this.program;
+        const positionLocation = gl.getAttribLocation(program, 'a_position');
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+        const timeLocation = gl.getUniformLocation(program, 'time');
+        gl.uniform1f(timeLocation, time);
+        const resolutionUniform = gl.getUniformLocation(program, 'resolution');
+        gl.uniform2fv(resolutionUniform, [
+            this.canvas.width,
+            this.canvas.height
+        ]);
+        const cameraPositionLocation = gl.getUniformLocation(program, 'camera_position');
+        gl.uniform3fv(cameraPositionLocation, this.camera.position);
+        const cameraRotationLocation = gl.getUniformLocation(program, 'camera_rotation');
+        gl.uniform2fv(cameraRotationLocation, [
+            this.camera.rotation.x,
+            this.camera.rotation.y
+        ]); // for (const uniform of this.uniforms) {
+        //   const uniformLocation = gl.getUniformLocation(program, uniform)
+        //   const color = colorToVec(getInputElement(uniform).value)
+        //   gl.uniform3fv(uniformLocation, color)
+        // }
+        gl.clearColor(1, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+    updateFragmentShader(shaderSource, uniforms) {
+        const gl = this.gl;
+        const vertexShader = this.compileShader(gl.VERTEX_SHADER, vertexShaderText);
+        const fragmentShader = this.compileShader(gl.FRAGMENT_SHADER, shaderSource);
+        this.uniforms = uniforms;
+        const program = gl.createProgram();
+        if (!program) throw Error('Failed to create program.');
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+        gl.validateProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            const info = gl.getProgramInfoLog(program);
+            this.errorCallback(info || 'missing program error log');
+            return;
+        }
+        this.errorCallback('');
+        gl.useProgram(program);
+        this.program = program;
+    }
+    bindQuadFillingScreen() {
+        const buffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
+            -1,
+            -1,
+            1,
+            -1,
+            -1,
+            1,
+            -1,
+            1,
+            1,
+            -1,
+            1,
+            1
+        ]), this.gl.STATIC_DRAW);
+    }
+    compileShader(shaderType, source) {
+        const shader = this.gl.createShader(shaderType);
+        if (!shader) throw Error('Failed to create shader');
+        this.gl.shaderSource(shader, source);
+        this.gl.compileShader(shader);
+        return shader;
+    }
+}
+const KEY_MAP = new Map();
+KEY_MAP.set('ArrowUp', new _vectorJs.Vector(0, 0, -1));
+KEY_MAP.set('ArrowDown', new _vectorJs.Vector(0, 0, 1));
+KEY_MAP.set('ArrowLeft', new _vectorJs.Vector(-1, 0, 0));
+KEY_MAP.set('ArrowRight', new _vectorJs.Vector(1, 0, 0));
+KEY_MAP.set(',', new _vectorJs.Vector(0, 0, -1));
+KEY_MAP.set('w', new _vectorJs.Vector(0, 0, -1));
+KEY_MAP.set('o', new _vectorJs.Vector(0, 0, 1));
+KEY_MAP.set('s', new _vectorJs.Vector(0, 0, 1));
+KEY_MAP.set('a', new _vectorJs.Vector(-1, 0, 0));
+KEY_MAP.set('e', new _vectorJs.Vector(1, 0, 0));
+KEY_MAP.set('d', new _vectorJs.Vector(1, 0, 0));
+const vertexShaderText = `#version 100
+
+attribute vec2 a_position;
+
+void main() {
+    gl_Position = vec4(a_position, 0, 1);
+}
+`;
+
+},{"../vector.js":"97lzA","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"97lzA":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Vector", ()=>Vector
+);
+class Vector {
+    /* :: x : number */ /* :: y : number */ /* :: z : number */ constructor(x, y, z){
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+    add(other) /* : Vector */ {
+        return new Vector(this.x + other.x, this.y + other.y, this.z + other.z);
+    }
+    subtract(other) /* : Vector */ {
+        return new Vector(this.x - other.x, this.y - other.y, this.z - other.z);
+    }
+    scale(factor) /* : Vector */ {
+        return new Vector(factor * this.x, factor * this.y, factor * this.z);
+    }
+    rotateY(theta) /* : Vector */ {
+        return new Vector(Math.cos(theta) * this.x - Math.sin(theta) * this.z, this.y, Math.sin(theta) * this.x + Math.cos(theta) * this.z);
+    }
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"4VGNy":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "scan", ()=>scan
@@ -22894,702 +23590,6 @@ class Stream {
     }
     nextIs(x) /* : boolean */ {
         return !this.atEnd() && this.peek() === x;
-    }
-}
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"j1M8a":[function(require,module,exports) {
-var $parcel$ReactRefreshHelpers$c71b = require("@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js");
-var prevRefreshReg = window.$RefreshReg$;
-var prevRefreshSig = window.$RefreshSig$;
-$parcel$ReactRefreshHelpers$c71b.prelude(module);
-
-try {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-/* global global */ //
-// Based upon: https://github.com/satya164/react-simple-code-editor/
-//
-// The MIT License (MIT)
-//
-// Copyright (C) 2018 - 2019
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to
-// deal in the Software without restriction, including without limitation the
-// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-// sell copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-//   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//   DEALINGS IN THE SOFTWARE.
-var _react = require("react");
-var global = arguments[3];
-const KEYCODE_ENTER = 13;
-const KEYCODE_TAB = 9;
-const KEYCODE_BACKSPACE = 8;
-const KEYCODE_Y = 89;
-const KEYCODE_Z = 90;
-const KEYCODE_M = 77;
-const KEYCODE_PARENS = 57;
-const KEYCODE_BRACKETS = 219;
-const KEYCODE_QUOTE = 222;
-const KEYCODE_BACK_QUOTE = 192;
-const KEYCODE_ESCAPE = 27;
-const HISTORY_LIMIT = 100;
-const HISTORY_TIME_GAP = 3000;
-const isWindows = 'navigator' in global && /Win/i.test(navigator.platform);
-const isMacLike = 'navigator' in global && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
-const className = 'npm__react-simple-code-editor__textarea';
-const cssText = /* CSS */ `
-/**
- * Reset the text fill color so that placeholder is visible
- */
-.${className}:empty {
-  -webkit-text-fill-color: inherit !important;
-}
-
-/**
- * Hack to apply on some CSS on IE10 and IE11
- */
-@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
-  /**
-    * IE doesn't support '-webkit-text-fill-color'
-    * So we use 'color: transparent' to make the text transparent on IE
-    * Unlike other browsers, it doesn't affect caret color in IE
-    */
-  .${className} {
-    color: transparent !important;
-  }
-
-  .${className}::selection {
-    background-color: #accef7 !important;
-    color: transparent !important;
-  }
-}
-`;
-class Editor extends _react.Component {
-    static defaultProps = {
-        tabSize: 2,
-        insertSpaces: true,
-        ignoreTabKey: false,
-        padding: 0
-    };
-    state = {
-        capture: true
-    };
-    componentDidMount() {
-        this._recordCurrentState();
-    }
-    _recordCurrentState = ()=>{
-        const input = this._input;
-        if (!input) return; // Save current state of the input
-        const { value , selectionStart , selectionEnd  } = input;
-        this._recordChange({
-            value,
-            selectionStart,
-            selectionEnd
-        });
-    };
-    _getLines = (text, position)=>text.substring(0, position).split('\n')
-    ;
-    _recordChange = (record, overwrite = false)=>{
-        const { stack , offset  } = this._history;
-        if (stack.length && offset > -1) {
-            // When something updates, drop the redo operations
-            this._history.stack = stack.slice(0, offset + 1); // Limit the number of operations to 100
-            const count = this._history.stack.length;
-            if (count > HISTORY_LIMIT) {
-                const extras = count - HISTORY_LIMIT;
-                this._history.stack = stack.slice(extras, count);
-                this._history.offset = Math.max(this._history.offset - extras, 0);
-            }
-        }
-        const timestamp = Date.now();
-        if (overwrite) {
-            const last = this._history.stack[this._history.offset];
-            if (last && timestamp - last.timestamp < HISTORY_TIME_GAP) {
-                // A previous entry exists and was in short interval
-                // Match the last word in the line
-                const re = /[^a-z0-9]([a-z0-9]+)$/i; // Get the previous line
-                const previous = this._getLines(last.value, last.selectionStart).pop().match(re); // Get the current line
-                const current = this._getLines(record.value, record.selectionStart).pop().match(re);
-                if (previous && current && current[1].startsWith(previous[1])) {
-                    // The last word of the previous line and current line match
-                    // Overwrite previous entry so that undo will remove whole word
-                    this._history.stack[this._history.offset] = {
-                        ...record,
-                        timestamp
-                    };
-                    return;
-                }
-            }
-        } // Add the new operation to the stack
-        this._history.stack.push({
-            ...record,
-            timestamp
-        });
-        this._history.offset++;
-    };
-    _updateInput = (record)=>{
-        const input = this._input;
-        if (!input) return; // Update values and selection state
-        input.value = record.value;
-        input.selectionStart = record.selectionStart;
-        input.selectionEnd = record.selectionEnd;
-        this.props.onValueChange(record.value);
-    };
-    _applyEdits = (record)=>{
-        // Save last selection state
-        const input = this._input;
-        const last = this._history.stack[this._history.offset];
-        if (last && input) this._history.stack[this._history.offset] = {
-            ...last,
-            selectionStart: input.selectionStart,
-            selectionEnd: input.selectionEnd
-        };
-         // Save the changes
-        this._recordChange(record);
-        this._updateInput(record);
-    };
-    _undoEdit = ()=>{
-        const { stack , offset  } = this._history; // Get the previous edit
-        const record = stack[offset - 1];
-        if (record) {
-            // Apply the changes and update the offset
-            this._updateInput(record);
-            this._history.offset = Math.max(offset - 1, 0);
-        }
-    };
-    _redoEdit = ()=>{
-        const { stack , offset  } = this._history; // Get the next edit
-        const record = stack[offset + 1];
-        if (record) {
-            // Apply the changes and update the offset
-            this._updateInput(record);
-            this._history.offset = Math.min(offset + 1, stack.length - 1);
-        }
-    };
-    _handleKeyDown = (e)=>{
-        const { tabSize , insertSpaces , ignoreTabKey , onKeyDown  } = this.props;
-        if (onKeyDown) {
-            onKeyDown(e);
-            if (e.defaultPrevented) return;
-        }
-        if (e.keyCode === KEYCODE_ESCAPE) e.target.blur();
-        const { value , selectionStart , selectionEnd  } = e.target;
-        const tabCharacter = (insertSpaces ? ' ' : '\t').repeat(tabSize);
-        if (e.keyCode === KEYCODE_TAB && !ignoreTabKey && this.state.capture) {
-            // Prevent focus change
-            e.preventDefault();
-            if (e.shiftKey) {
-                // Unindent selected lines
-                const linesBeforeCaret = this._getLines(value, selectionStart);
-                const startLine = linesBeforeCaret.length - 1;
-                const endLine = this._getLines(value, selectionEnd).length - 1;
-                const nextValue = value.split('\n').map((line, i)=>{
-                    if (i >= startLine && i <= endLine && line.startsWith(tabCharacter)) return line.substring(tabCharacter.length);
-                    return line;
-                }).join('\n');
-                if (value !== nextValue) {
-                    const startLineText = linesBeforeCaret[startLine];
-                    this._applyEdits({
-                        value: nextValue,
-                        // Move the start cursor if first line in selection was modified
-                        // It was modified only if it started with a tab
-                        selectionStart: startLineText.startsWith(tabCharacter) ? selectionStart - tabCharacter.length : selectionStart,
-                        // Move the end cursor by total number of characters removed
-                        selectionEnd: selectionEnd - (value.length - nextValue.length)
-                    });
-                }
-            } else if (selectionStart !== selectionEnd) {
-                // Indent selected lines
-                const linesBeforeCaret = this._getLines(value, selectionStart);
-                const startLine = linesBeforeCaret.length - 1;
-                const endLine = this._getLines(value, selectionEnd).length - 1;
-                const startLineText = linesBeforeCaret[startLine];
-                this._applyEdits({
-                    value: value.split('\n').map((line, i)=>{
-                        if (i >= startLine && i <= endLine) return tabCharacter + line;
-                        return line;
-                    }).join('\n'),
-                    // Move the start cursor by number of characters added in first line of selection
-                    // Don't move it if it there was no text before cursor
-                    selectionStart: /\S/.test(startLineText) ? selectionStart + tabCharacter.length : selectionStart,
-                    // Move the end cursor by total number of characters added
-                    selectionEnd: selectionEnd + tabCharacter.length * (endLine - startLine + 1)
-                });
-            } else {
-                const updatedSelection = selectionStart + tabCharacter.length;
-                this._applyEdits({
-                    // Insert tab character at caret
-                    value: value.substring(0, selectionStart) + tabCharacter + value.substring(selectionEnd),
-                    // Update caret position
-                    selectionStart: updatedSelection,
-                    selectionEnd: updatedSelection
-                });
-            }
-        } else if (e.keyCode === KEYCODE_BACKSPACE) {
-            const hasSelection = selectionStart !== selectionEnd;
-            const textBeforeCaret = value.substring(0, selectionStart);
-            if (textBeforeCaret.endsWith(tabCharacter) && !hasSelection) {
-                // Prevent default delete behaviour
-                e.preventDefault();
-                const updatedSelection = selectionStart - tabCharacter.length;
-                this._applyEdits({
-                    // Remove tab character at caret
-                    value: value.substring(0, selectionStart - tabCharacter.length) + value.substring(selectionEnd),
-                    // Update caret position
-                    selectionStart: updatedSelection,
-                    selectionEnd: updatedSelection
-                });
-            }
-        } else if (e.keyCode === KEYCODE_ENTER) // Ignore selections
-        {
-            if (selectionStart === selectionEnd) {
-                // Get the current line
-                const line = this._getLines(value, selectionStart).pop();
-                const matches = line.match(/^\s+/);
-                if (matches && matches[0]) {
-                    e.preventDefault(); // Preserve indentation on inserting a new line
-                    const indent = '\n' + matches[0];
-                    const updatedSelection = selectionStart + indent.length;
-                    this._applyEdits({
-                        // Insert indentation character at caret
-                        value: value.substring(0, selectionStart) + indent + value.substring(selectionEnd),
-                        // Update caret position
-                        selectionStart: updatedSelection,
-                        selectionEnd: updatedSelection
-                    });
-                }
-            }
-        } else if (e.keyCode === KEYCODE_PARENS || e.keyCode === KEYCODE_BRACKETS || e.keyCode === KEYCODE_QUOTE || e.keyCode === KEYCODE_BACK_QUOTE) {
-            let chars;
-            if (e.keyCode === KEYCODE_PARENS && e.shiftKey) chars = [
-                '(',
-                ')'
-            ];
-            else if (e.keyCode === KEYCODE_BRACKETS) {
-                if (e.shiftKey) chars = [
-                    '{',
-                    '}'
-                ];
-                else chars = [
-                    '[',
-                    ']'
-                ];
-            } else if (e.keyCode === KEYCODE_QUOTE) {
-                if (e.shiftKey) chars = [
-                    '"',
-                    '"'
-                ];
-                else chars = [
-                    "'",
-                    "'"
-                ];
-            } else if (e.keyCode === KEYCODE_BACK_QUOTE && !e.shiftKey) chars = [
-                '`',
-                '`'
-            ];
-             // If text is selected, wrap them in the characters
-            if (selectionStart !== selectionEnd && chars) {
-                e.preventDefault();
-                this._applyEdits({
-                    value: value.substring(0, selectionStart) + chars[0] + value.substring(selectionStart, selectionEnd) + chars[1] + value.substring(selectionEnd),
-                    // Update caret position
-                    selectionStart,
-                    selectionEnd: selectionEnd + 2
-                });
-            }
-        } else if ((isMacLike ? e.metaKey && e.keyCode === KEYCODE_Z : e.ctrlKey && e.keyCode === KEYCODE_Z) && !e.shiftKey && !e.altKey) {
-            e.preventDefault();
-            this._undoEdit();
-        } else if ((isMacLike ? e.metaKey && e.keyCode === KEYCODE_Z && e.shiftKey : isWindows ? e.ctrlKey && e.keyCode === KEYCODE_Y : e.ctrlKey && e.keyCode === KEYCODE_Z && e.shiftKey) && !e.altKey) {
-            e.preventDefault();
-            this._redoEdit();
-        } else if (e.keyCode === KEYCODE_M && e.ctrlKey && (isMacLike ? e.shiftKey : true)) {
-            e.preventDefault(); // Toggle capturing tab key so users can focus away
-            this.setState((state)=>({
-                    capture: !state.capture
-                })
-            );
-        }
-    };
-    _handleChange = (e)=>{
-        const { value , selectionStart , selectionEnd  } = e.target;
-        this._recordChange({
-            value,
-            selectionStart,
-            selectionEnd
-        }, true);
-        this.props.onValueChange(value);
-    };
-    _history = {
-        stack: [],
-        offset: -1
-    };
-    get session() {
-        return {
-            history: this._history
-        };
-    }
-    set session(session) {
-        this._history = session.history;
-    }
-    render() {
-        const { value , style , padding , highlight , textareaId , textareaClassName , autoFocus , disabled , form , maxLength , minLength , name , placeholder , readOnly , required , onClick , onFocus , onBlur , onKeyUp , /* eslint-disable no-unused-vars */ onKeyDown , onValueChange , onSelectionChange , tabSize , insertSpaces , ignoreTabKey , /* eslint-enable no-unused-vars */ preClassName , ...rest } = this.props;
-        const contentStyle = {
-            paddingTop: padding,
-            paddingRight: padding,
-            paddingBottom: padding,
-            paddingLeft: padding
-        };
-        const highlighted = highlight(value);
-        return(/*#__PURE__*/ _react.createElement("div", {
-            ...rest,
-            style: {
-                ...styles.container,
-                ...style
-            },
-            __source: {
-                fileName: "src/simple-editor.jsx",
-                lineNumber: 466,
-                columnNumber: 12
-            },
-            __self: this
-        }, /*#__PURE__*/ _react.createElement("textarea", {
-            ref: (c)=>{
-                if (c && !this._input) {
-                    c.addEventListener("selectionchange", onSelectionChange);
-                    this._input = c;
-                }
-            },
-            style: {
-                ...styles.editor,
-                ...styles.textarea,
-                ...contentStyle
-            },
-            className: className + (textareaClassName ? ` ${textareaClassName}` : ''),
-            id: textareaId,
-            value: value,
-            onChange: this._handleChange,
-            onKeyDown: this._handleKeyDown,
-            onClick: onClick,
-            onKeyUp: onKeyUp,
-            onFocus: onFocus,
-            onBlur: onBlur,
-            disabled: disabled,
-            form: form,
-            maxLength: maxLength,
-            minLength: minLength,
-            name: name,
-            placeholder: placeholder,
-            readOnly: readOnly,
-            required: required,
-            autoFocus: autoFocus,
-            autoCapitalize: "off",
-            autoComplete: "off",
-            autoCorrect: "off",
-            spellCheck: false,
-            "data-gramm": false,
-            __source: {
-                fileName: "src/simple-editor.jsx",
-                lineNumber: 469,
-                columnNumber: 9
-            },
-            __self: this
-        }), /*#__PURE__*/ _react.createElement("pre", {
-            className: preClassName,
-            "aria-hidden": "true",
-            style: {
-                ...styles.editor,
-                ...styles.highlight,
-                ...contentStyle
-            },
-            ...typeof highlighted === 'string' ? {
-                dangerouslySetInnerHTML: {
-                    __html: highlighted + '<br />'
-                }
-            } : {
-                children: highlighted
-            },
-            __source: {
-                fileName: "src/simple-editor.jsx",
-                lineNumber: 478,
-                columnNumber: 9
-            },
-            __self: this
-        }), /*#__PURE__*/ _react.createElement("style", {
-            type: "text/css",
-            dangerouslySetInnerHTML: {
-                __html: cssText
-            },
-            __source: {
-                fileName: "src/simple-editor.jsx",
-                lineNumber: 491,
-                columnNumber: 9
-            },
-            __self: this
-        })));
-    }
-}
-exports.default = Editor;
-const styles = {
-    container: {
-        position: 'relative',
-        textAlign: 'left',
-        boxSizing: 'border-box',
-        padding: 0,
-        overflow: 'hidden'
-    },
-    textarea: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        height: '100%',
-        width: '100%',
-        resize: 'none',
-        color: 'inherit',
-        overflow: 'hidden',
-        MozOsxFontSmoothing: 'grayscale',
-        WebkitFontSmoothing: 'antialiased',
-        WebkitTextFillColor: 'transparent'
-    },
-    highlight: {
-        position: 'relative',
-        pointerEvents: 'none'
-    },
-    editor: {
-        margin: 0,
-        border: 0,
-        background: 'none',
-        boxSizing: 'inherit',
-        display: 'inherit',
-        fontFamily: 'inherit',
-        fontSize: 'inherit',
-        fontStyle: 'inherit',
-        fontVariantLigatures: 'inherit',
-        fontWeight: 'inherit',
-        letterSpacing: 'inherit',
-        lineHeight: 'inherit',
-        tabSize: 'inherit',
-        textIndent: 'inherit',
-        textRendering: 'inherit',
-        textTransform: 'inherit',
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'keep-all',
-        overflowWrap: 'break-word'
-    }
-};
-
-  $parcel$ReactRefreshHelpers$c71b.postlude(module);
-} finally {
-  window.$RefreshReg$ = prevRefreshReg;
-  window.$RefreshSig$ = prevRefreshSig;
-}
-},{"react":"21dqq","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"km3Ru"}],"k5ez6":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Camera", ()=>Camera
-);
-parcelHelpers.export(exports, "ShaderAnimation", ()=>ShaderAnimation
-);
-var _vectorJs = require("../vector.js");
-class Camera {
-    /* :: _position : Vector */ /* :: velocity : Vector */ /* :: rotation : { x: number, y: number } */ constructor(x, y, z){
-        this._position = new _vectorJs.Vector(x, y, z);
-        this.velocity = new _vectorJs.Vector(0, 0, 0);
-        this.rotation = {
-            x: 0,
-            y: 0
-        };
-        window.setInterval(()=>this.tick()
-        , 50);
-    }
-    get position() /* : [ number, number, number ] */ {
-        return [
-            this._position.x,
-            this._position.y,
-            this._position.z
-        ];
-    }
-    tick() {
-        this._position = this._position.add(this.velocity.scale(0.2).rotateY(this.rotation.y));
-    }
-    handleMouseMove(event) {
-        if (document.pointerLockElement) {
-            this.rotation.y += event.movementX / 100;
-            this.rotation.x += event.movementY / 100;
-        }
-    }
-    handleKeyDown(event) {
-        if (event.repeat) return;
-        if (!document.pointerLockElement) return;
-        const direction = KEY_MAP.get(event.key);
-        if (direction) this.velocity = this.velocity.add(direction);
-    }
-    handleKeyUp(event) {
-        if (!document.pointerLockElement) return;
-        const direction = KEY_MAP.get(event.key);
-        if (direction) this.velocity = this.velocity.subtract(direction);
-    }
-}
-class ShaderAnimation {
-    /* :: startTime: number */ /* :: lastTime: number */ /* :: frames: number */ /* :: canvas: HTMLCanvasElement */ /* :: gl: WebGLRenderingContext */ /* :: program: any */ /* :: uniforms: Array<string> */ /* :: camera: Camera */ constructor(canvas, camera, errorCallback){
-        this.errorCallback = errorCallback;
-        this.startTime = window.performance.now();
-        this.lastTime = this.startTime;
-        this.frames = 0;
-        this.canvas = canvas;
-        this.camera = camera;
-        const gl = canvas.getContext('experimental-webgl');
-        if (!(gl instanceof window.WebGLRenderingContext)) throw Error("Didn't get a WebGL context.");
-        this.gl = gl;
-        canvas.width = 800;
-        canvas.height = 600;
-        this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
-        this.bindQuadFillingScreen();
-        this.program = null;
-        this.uniforms = [];
-    }
-    renderLoop() {
-        window.requestAnimationFrame(()=>this.renderLoop()
-        , this.canvas);
-        if (this.program) {
-            const time = (window.performance.now() - this.startTime) / 1000;
-            this.render(time);
-            if (this.frames >= 100) {
-                // getFPSSpan().textContent = Math.round(this.frames / (time - this.lastTime)).toString()
-                this.frames = 0;
-                this.lastTime = time;
-            }
-            this.frames += 1;
-        }
-    }
-    render(time) {
-        const gl = this.gl;
-        const program = this.program;
-        const positionLocation = gl.getAttribLocation(program, 'a_position');
-        gl.enableVertexAttribArray(positionLocation);
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-        const timeLocation = gl.getUniformLocation(program, 'time');
-        gl.uniform1f(timeLocation, time);
-        const resolutionUniform = gl.getUniformLocation(program, 'resolution');
-        gl.uniform2fv(resolutionUniform, [
-            this.canvas.width,
-            this.canvas.height
-        ]);
-        const cameraPositionLocation = gl.getUniformLocation(program, 'camera_position');
-        gl.uniform3fv(cameraPositionLocation, this.camera.position);
-        const cameraRotationLocation = gl.getUniformLocation(program, 'camera_rotation');
-        gl.uniform2fv(cameraRotationLocation, [
-            this.camera.rotation.x,
-            this.camera.rotation.y
-        ]); // for (const uniform of this.uniforms) {
-        //   const uniformLocation = gl.getUniformLocation(program, uniform)
-        //   const color = colorToVec(getInputElement(uniform).value)
-        //   gl.uniform3fv(uniformLocation, color)
-        // }
-        gl.clearColor(1, 0, 0, 1);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-    }
-    updateFragmentShader(shaderSource, uniforms) {
-        const gl = this.gl;
-        const vertexShader = this.compileShader(gl.VERTEX_SHADER, vertexShaderText);
-        const fragmentShader = this.compileShader(gl.FRAGMENT_SHADER, shaderSource);
-        this.uniforms = uniforms;
-        const program = gl.createProgram();
-        if (!program) throw Error('Failed to create program.');
-        gl.attachShader(program, vertexShader);
-        gl.attachShader(program, fragmentShader);
-        gl.linkProgram(program);
-        gl.validateProgram(program);
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            const info = gl.getProgramInfoLog(program);
-            this.errorCallback(info || 'missing program error log');
-            return;
-        }
-        this.errorCallback('');
-        gl.useProgram(program);
-        this.program = program;
-    }
-    bindQuadFillingScreen() {
-        const buffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
-            -1,
-            -1,
-            1,
-            -1,
-            -1,
-            1,
-            -1,
-            1,
-            1,
-            -1,
-            1,
-            1
-        ]), this.gl.STATIC_DRAW);
-    }
-    compileShader(shaderType, source) {
-        const shader = this.gl.createShader(shaderType);
-        if (!shader) throw Error('Failed to create shader');
-        this.gl.shaderSource(shader, source);
-        this.gl.compileShader(shader);
-        return shader;
-    }
-}
-const KEY_MAP = new Map();
-KEY_MAP.set('ArrowUp', new _vectorJs.Vector(0, 0, -1));
-KEY_MAP.set('ArrowDown', new _vectorJs.Vector(0, 0, 1));
-KEY_MAP.set('ArrowLeft', new _vectorJs.Vector(-1, 0, 0));
-KEY_MAP.set('ArrowRight', new _vectorJs.Vector(1, 0, 0));
-KEY_MAP.set(',', new _vectorJs.Vector(0, 0, -1));
-KEY_MAP.set('w', new _vectorJs.Vector(0, 0, -1));
-KEY_MAP.set('o', new _vectorJs.Vector(0, 0, 1));
-KEY_MAP.set('s', new _vectorJs.Vector(0, 0, 1));
-KEY_MAP.set('a', new _vectorJs.Vector(-1, 0, 0));
-KEY_MAP.set('e', new _vectorJs.Vector(1, 0, 0));
-KEY_MAP.set('d', new _vectorJs.Vector(1, 0, 0));
-const vertexShaderText = `#version 100
-
-attribute vec2 a_position;
-
-void main() {
-    gl_Position = vec4(a_position, 0, 1);
-}
-`;
-
-},{"../vector.js":"97lzA","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"97lzA":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Vector", ()=>Vector
-);
-class Vector {
-    /* :: x : number */ /* :: y : number */ /* :: z : number */ constructor(x, y, z){
-        this.x = x;
-        this.y = y;
-        this.z = z;
-    }
-    add(other) /* : Vector */ {
-        return new Vector(this.x + other.x, this.y + other.y, this.z + other.z);
-    }
-    subtract(other) /* : Vector */ {
-        return new Vector(this.x - other.x, this.y - other.y, this.z - other.z);
-    }
-    scale(factor) /* : Vector */ {
-        return new Vector(factor * this.x, factor * this.y, factor * this.z);
-    }
-    rotateY(theta) /* : Vector */ {
-        return new Vector(Math.cos(theta) * this.x - Math.sin(theta) * this.z, this.y, Math.sin(theta) * this.x + Math.cos(theta) * this.z);
     }
 }
 
