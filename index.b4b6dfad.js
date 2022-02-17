@@ -576,7 +576,7 @@ function Token(props) {
         __self: this
     }, "No current token."));
     if (props.token.type === 'number') {
-        const range = _numbersJs.bracket(parseFloat(props.token.value));
+        const range = _numbersJs.sliderRange(props.token.value);
         return(/*#__PURE__*/ _reactDefault.default.createElement("div", {
             __source: {
                 fileName: "src/index.jsx",
@@ -23596,20 +23596,19 @@ class Vector {
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9uLzp":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "bracket", ()=>bracket
+parcelHelpers.export(exports, "sliderRange", ()=>sliderRange
 );
 parcelHelpers.export(exports, "formatLike", ()=>formatLike
-) // function places () {
- //   const dotLocation = example.indexOf('.')
- // }
-;
-function bracket(number) {
-    //   const dotLocation = example.indexOf('.')
-    const max = 10 ** Math.ceil(Math.log10(number));
+);
+function sliderRange(number) {
+    const [leading, significant] = splitSignificantDigits(number);
+    const max = leading + significant.replaceAll(/[0-9]/g, '9');
+    const min = leading + significant.replaceAll(/[0-9]/g, '0').replace('0', '1');
+    const step = leading + significant.replaceAll(/[0-9]/g, '0').replace(/0\.?$/, '1');
     return {
-        min: max / 10,
+        min: min,
         max: max,
-        step: max / 100
+        step: step
     };
 }
 function formatLike(input, example) {
@@ -23620,6 +23619,17 @@ function formatLike(input, example) {
         if (places === 0) return input.toFixed(places) + '.';
         return input.toFixed(places);
     }
+}
+function splitSignificantDigits(number) {
+    const position = number.search(/[^0.]/);
+    if (position >= 0) return [
+        number.substr(0, position),
+        number.substr(position, number.length)
+    ];
+    return [
+        number,
+        ''
+    ];
 }
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["1SYPb","d8Dch"], "d8Dch", "parcelRequirec7d2")
