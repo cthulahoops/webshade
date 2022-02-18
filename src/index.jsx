@@ -65,8 +65,7 @@ function Token (props /* : { token: Object, onChange: Function } */) {
 
 function App () {
   const [code, setCode] = useState('#version 100\n')
-  const [selectionStart, setSelectionStart] = useState(0)
-  const [selectionEnd, setSelectionEnd] = useState(0)
+  const selection = useSelection()
   const [shader, setShader] = useState('geometry.frag')
   const [errors, setErrors] = useState('')
 
@@ -107,7 +106,7 @@ function App () {
       return []
     }
   }, [code])
-  const currentToken /* : { position: number, value: string } | void */ = useMemo(() => tokenAt(tokens, selectionStart), [tokens, selectionStart])
+  const currentToken /* : { position: number, value: string } | void */ = useMemo(() => tokenAt(tokens, selection.value.start), [tokens, selection.value.start])
 
   const updateToken = (value) => {
     if (!value) {
@@ -143,7 +142,7 @@ function App () {
           <option>wheel.frag</option>
         </select>
         FPS = <span id='fps' />
-        <div>Selection: {selectionStart}-{selectionEnd}</div>
+        <div>Selection: {selection.value.start}-{selection.value.end}</div>
         <div>Current token: <Token token={currentToken} onChange={updateToken} /></div>
         <div>({position.x}, {position.y}, {position.z})</div>
         <div>({rotation.x}, {rotation.y})</div>
@@ -156,21 +155,26 @@ function App () {
           id='shader_source'
           value={code}
           onValueChange={setCode}
-          onSelectionChange={
-            (event) => {
-              console.log(event)
-              if (event.target.selectionStart === event.target.textLength) {
-                return
-              }
-              setSelectionStart(event.target.selectionStart)
-              setSelectionEnd(event.target.selectionEnd)
-            }
-          }
+          onSelectionChange={selection.handleSelectionChange}
           highlight={(code) => highlight(code, languages.glsl)}
         />
       </div>
     </div>
   )
+}
+
+function useSelection () {
+  const [selection, setSelection] = useState({ start: 0, end: 0 })
+  return {
+    value: selection,
+    handleSelectionChange: (event) => {
+      console.log(event)
+      if (event.target.selectionStart === event.target.textLength) {
+        return
+      }
+      setSelection({ start: event.target.selectionStart, end: event.target.selectionEnd })
+    }
+  }
 }
 
 ReactDOM.render(<App />, document.getElementById('app'))
