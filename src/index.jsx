@@ -92,9 +92,7 @@ function App () {
         FPS = <span id='fps' />
         <div>Selection: {selection.value.start}-{selection.value.end}</div>
         <div>Current token: <Token token={currentToken} onChange={updateToken} /></div>
-        <div>({position.x}, {position.y}, {position.z})</div>
-        <div>({rotation.x}, {rotation.y})</div>
-        <ul id='uniforms' />
+        <CameraValues position={position} rotation={rotation} />
         <pre>{errors}</pre>
       </div>
 
@@ -118,6 +116,15 @@ function Selection ({ options, selected, handleChange }) {
         options.map((option) => <option key={option}>{option}</option>)
       }
     </select>
+  )
+}
+
+function CameraValues ({ position, rotation }) {
+  return (
+    <div>
+      <div>position = ({position.x.toFixed(3)}, {position.y.toFixed(3)}, {position.z.toFixed(3)})</div>
+      <div>rotation = ({rotation.x.toFixed(3)}, {rotation.y.toFixed(3)})</div>
+    </div>
   )
 }
 
