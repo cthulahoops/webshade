@@ -132,7 +132,6 @@ function App () {
         FPS = <span id='fps' />
         <div>Selection: {selectionStart}-{selectionEnd}</div>
         <div>Current token: <Token token={currentToken} onChange={updateToken} /></div>
-        <div>Camera position: {animation.current ? animation.current.camera.position : ''}</div>
         <ul id='uniforms' />
         <pre>{errors}</pre>
       </div>

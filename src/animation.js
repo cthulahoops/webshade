@@ -3,24 +3,28 @@
 import { Vector } from '../vector.js'
 
 export class Camera {
-  /* :: _position : Vector */
+  /* :: position : Vector */
   /* :: velocity : Vector */
   /* :: rotation : { x: number, y: number } */
 
-  constructor (x /* : number */, y /* : number */, z /* : number */) {
-    this._position = new Vector(x, y, z)
+  constructor (
+    x /* : number */,
+    y /* : number */,
+    z /* : number */
+  ) {
+    this.position = new Vector(x, y, z)
     this.velocity = new Vector(0, 0, 0)
     this.rotation = { x: 0, y: 0 }
 
     window.setInterval(() => this.tick(), 50)
   }
 
-  get position () /* : [ number, number, number ] */ {
-    return [this._position.x, this._position.y, this._position.z]
+  get positionArray () /* : [ number, number, number ] */ {
+    return [this.position.x, this.position.y, this.position.z]
   }
 
   tick () {
-    this._position = this._position.add(this.velocity.scale(0.2).rotateY(this.rotation.y))
+    this.position = this.position.add(this.velocity.scale(0.2).rotateY(this.rotation.y))
   }
 
   handleMouseMove (event) {
@@ -122,7 +126,7 @@ export class ShaderAnimation {
     gl.uniform2fv(resolutionUniform, ([this.canvas.width, this.canvas.height] /* : [number, number] */))
 
     const cameraPositionLocation = gl.getUniformLocation(program, 'camera_position')
-    gl.uniform3fv(cameraPositionLocation, (this.camera.position /* : [number, number, number] */))
+    gl.uniform3fv(cameraPositionLocation, (this.camera.positionArray /* : [number, number, number] */))
 
     const cameraRotationLocation = gl.getUniformLocation(program, 'camera_rotation')
     gl.uniform2fv(cameraRotationLocation, ([this.camera.rotation.x, this.camera.rotation.y] /* : [number, number] */))
