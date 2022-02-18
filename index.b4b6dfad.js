@@ -555,7 +555,7 @@ function tokenAt(tokens, position) {
 }
 const compileRender = debounce((animation, source)=>{
     console.log('Debounced: Updating and compiling shader!');
-    animation.updateFragmentShader(source, []);
+    animation.updateFragmentShader(source);
 }, 200);
 async function selectShader(shaderName, setCode) {
     const shaderResponse = await window.fetch(shaderName);
@@ -570,7 +570,7 @@ function Token(props) {
     if (!props.token) return(/*#__PURE__*/ _reactDefault.default.createElement("span", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 48,
+            lineNumber: 52,
             columnNumber: 12
         },
         __self: this
@@ -580,7 +580,7 @@ function Token(props) {
         return(/*#__PURE__*/ _reactDefault.default.createElement("div", {
             __source: {
                 fileName: "src/index.jsx",
-                lineNumber: 53,
+                lineNumber: 57,
                 columnNumber: 12
             },
             __self: this
@@ -597,14 +597,14 @@ function Token(props) {
             ,
             __source: {
                 fileName: "src/index.jsx",
-                lineNumber: 55,
+                lineNumber: 59,
                 columnNumber: 9
             },
             __self: this
         }), /*#__PURE__*/ _reactDefault.default.createElement("span", {
             __source: {
                 fileName: "src/index.jsx",
-                lineNumber: 58,
+                lineNumber: 62,
                 columnNumber: 9
             },
             __self: this
@@ -613,7 +613,7 @@ function Token(props) {
     return(/*#__PURE__*/ _reactDefault.default.createElement("div", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 62,
+            lineNumber: 66,
             columnNumber: 10
         },
         __self: this
@@ -625,12 +625,24 @@ function App() {
     const [selectionEnd, setSelectionEnd] = _react.useState(0);
     const [shader, setShader] = _react.useState('geometry.frag');
     const [errors, setErrors] = _react.useState('');
+    const [position, setPosition] = _react.useState({
+        x: 0,
+        y: 1,
+        z: 0
+    });
+    const [rotation, setRotation] = _react.useState({
+        x: 0,
+        y: 0
+    });
+    const camera = _react.useRef(new _animationJs.Camera(position, (c)=>{
+        setPosition(c.position);
+        setRotation(c.rotation);
+    }));
     const canvas = _react.useRef();
     const animation = _react.useRef();
     _react.useEffect(()=>{
         if (!canvas.current) return;
-        const camera = new _animationJs.Camera(0, 1, 0);
-        const newAnimation = new _animationJs.ShaderAnimation(canvas.current, camera, setErrors);
+        const newAnimation = new _animationJs.ShaderAnimation(canvas.current, camera.current, setErrors);
         newAnimation.renderLoop();
         animation.current = newAnimation;
     }, [
@@ -643,7 +655,7 @@ function App() {
         shader
     ]);
     _react.useEffect(()=>{
-        compileRender(animation.current, code1);
+        if (animation.current) compileRender(animation.current, code1);
     }, [
         animation,
         code1
@@ -664,6 +676,7 @@ function App() {
     ]);
     const updateToken = (value)=>{
         if (!value) return;
+        if (!currentToken) return;
         const newCode = stringSplice(code1, currentToken.position, currentToken.value.length, _numbersJs.formatLike(parseFloat(value), currentToken.value));
         setCode(newCode);
     };
@@ -671,7 +684,7 @@ function App() {
         className: "grid_container",
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 108,
+            lineNumber: 132,
             columnNumber: 10
         },
         __self: this
@@ -679,7 +692,7 @@ function App() {
         className: "canvas",
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 109,
+            lineNumber: 133,
             columnNumber: 7
         },
         __self: this
@@ -687,17 +700,18 @@ function App() {
         tabIndex: -1,
         ref: canvas,
         id: "glscreen",
-        onClick: ()=>canvas.current.requestPointerLock()
+        onClick: ()=>{
+            if (canvas.current) canvas.current.requestPointerLock();
+        },
+        onMouseMove: (event)=>camera.current.handleMouseMove(event)
         ,
-        onMouseMove: (event)=>animation.current.camera.handleMouseMove(event)
+        onKeyDown: (event)=>camera.current.handleKeyDown(event)
         ,
-        onKeyDown: (event)=>animation.current.camera.handleKeyDown(event)
-        ,
-        onKeyUp: (event)=>animation.current.camera.handleKeyUp(event)
+        onKeyUp: (event)=>camera.current.handleKeyUp(event)
         ,
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 110,
+            lineNumber: 134,
             columnNumber: 9
         },
         __self: this
@@ -707,56 +721,56 @@ function App() {
         ,
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 112,
+            lineNumber: 138,
             columnNumber: 9
         },
         __self: this
     }, /*#__PURE__*/ _reactDefault.default.createElement("option", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 113,
+            lineNumber: 139,
             columnNumber: 11
         },
         __self: this
     }, "geometry.frag"), /*#__PURE__*/ _reactDefault.default.createElement("option", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 114,
+            lineNumber: 140,
             columnNumber: 11
         },
         __self: this
     }, "cone.frag"), /*#__PURE__*/ _reactDefault.default.createElement("option", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 115,
+            lineNumber: 141,
             columnNumber: 11
         },
         __self: this
     }, "marching.frag"), /*#__PURE__*/ _reactDefault.default.createElement("option", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 116,
+            lineNumber: 142,
             columnNumber: 11
         },
         __self: this
     }, "manyspheres.frag"), /*#__PURE__*/ _reactDefault.default.createElement("option", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 117,
+            lineNumber: 143,
             columnNumber: 11
         },
         __self: this
     }, "mixing.frag"), /*#__PURE__*/ _reactDefault.default.createElement("option", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 118,
+            lineNumber: 144,
             columnNumber: 11
         },
         __self: this
     }, "simple.frag"), /*#__PURE__*/ _reactDefault.default.createElement("option", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 119,
+            lineNumber: 145,
             columnNumber: 11
         },
         __self: this
@@ -764,21 +778,21 @@ function App() {
         id: "fps",
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 121,
+            lineNumber: 147,
             columnNumber: 15
         },
         __self: this
     }), /*#__PURE__*/ _reactDefault.default.createElement("div", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 122,
+            lineNumber: 148,
             columnNumber: 9
         },
         __self: this
     }, "Selection: ", selectionStart, "-", selectionEnd), /*#__PURE__*/ _reactDefault.default.createElement("div", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 123,
+            lineNumber: 149,
             columnNumber: 9
         },
         __self: this
@@ -787,29 +801,36 @@ function App() {
         onChange: updateToken,
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 123,
+            lineNumber: 149,
             columnNumber: 29
         },
         __self: this
     })), /*#__PURE__*/ _reactDefault.default.createElement("div", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 124,
+            lineNumber: 150,
             columnNumber: 9
         },
         __self: this
-    }, "Camera position: ", animation.current ? animation.current.camera.position : ''), /*#__PURE__*/ _reactDefault.default.createElement("ul", {
+    }, "(", position.x, ", ", position.y, ", ", position.z, ")"), /*#__PURE__*/ _reactDefault.default.createElement("div", {
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 151,
+            columnNumber: 9
+        },
+        __self: this
+    }, "(", rotation.x, ", ", rotation.y, ")"), /*#__PURE__*/ _reactDefault.default.createElement("ul", {
         id: "uniforms",
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 125,
+            lineNumber: 152,
             columnNumber: 9
         },
         __self: this
     }), /*#__PURE__*/ _reactDefault.default.createElement("pre", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 126,
+            lineNumber: 153,
             columnNumber: 9
         },
         __self: this
@@ -817,7 +838,7 @@ function App() {
         className: "source",
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 129,
+            lineNumber: 156,
             columnNumber: 7
         },
         __self: this
@@ -835,7 +856,7 @@ function App() {
         ,
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 130,
+            lineNumber: 157,
             columnNumber: 9
         },
         __self: this
@@ -844,7 +865,7 @@ function App() {
 _reactDomDefault.default.render(/*#__PURE__*/ _reactDefault.default.createElement(App, {
     __source: {
         fileName: "src/index.jsx",
-        lineNumber: 144,
+        lineNumber: 171,
         columnNumber: 17
     },
     __self: undefined
@@ -23198,46 +23219,57 @@ parcelHelpers.export(exports, "ShaderAnimation", ()=>ShaderAnimation
 );
 var _vectorJs = require("../vector.js");
 class Camera {
-    /* :: _position : Vector */ /* :: velocity : Vector */ /* :: rotation : { x: number, y: number } */ constructor(x, y, z){
-        this._position = new _vectorJs.Vector(x, y, z);
+    /* :: position : Vector */ /* :: velocity : Vector */ /* :: rotation : { x: number, y: number } */ /* :: handleChange: Function */ constructor(position, handleChange){
+        this.position = new _vectorJs.Vector(position.x, position.y, position.z);
         this.velocity = new _vectorJs.Vector(0, 0, 0);
         this.rotation = {
             x: 0,
             y: 0
         };
+        this.handleChange = handleChange;
         window.setInterval(()=>this.tick()
         , 50);
     }
-    get position() /* : [ number, number, number ] */ {
+    get positionArray() /* : [ number, number, number ] */ {
         return [
-            this._position.x,
-            this._position.y,
-            this._position.z
+            this.position.x,
+            this.position.y,
+            this.position.z
         ];
     }
     tick() {
-        this._position = this._position.add(this.velocity.scale(0.2).rotateY(this.rotation.y));
+        if (this.velocity.x === 0 && this.velocity.y === 0 && this.velocity.z === 0) return;
+        this.position = this.position.add(this.velocity.scale(0.2).rotateY(this.rotation.y));
+        this.handleChange(this);
     }
     handleMouseMove(event) {
-        if (document.pointerLockElement) {
-            this.rotation.y += event.movementX / 100;
-            this.rotation.x += event.movementY / 100;
-        }
+        if (!document.pointerLockElement) return;
+        this.rotation = {
+            x: this.rotation.x + event.movementY / 100,
+            y: this.rotation.y + event.movementX / 100
+        };
+        this.handleChange(this);
     }
     handleKeyDown(event) {
         if (event.repeat) return;
         if (!document.pointerLockElement) return;
         const direction = KEY_MAP.get(event.key);
-        if (direction) this.velocity = this.velocity.add(direction);
+        if (direction) {
+            this.velocity = this.velocity.add(direction);
+            this.handleChange(this);
+        }
     }
     handleKeyUp(event) {
         if (!document.pointerLockElement) return;
         const direction = KEY_MAP.get(event.key);
-        if (direction) this.velocity = this.velocity.subtract(direction);
+        if (direction) {
+            this.velocity = this.velocity.subtract(direction);
+            this.handleChange(this);
+        }
     }
 }
 class ShaderAnimation {
-    /* :: startTime: number */ /* :: lastTime: number */ /* :: frames: number */ /* :: canvas: HTMLCanvasElement */ /* :: gl: WebGLRenderingContext */ /* :: program: any */ /* :: uniforms: Array<string> */ /* :: camera: Camera */ constructor(canvas, camera, errorCallback){
+    /* :: startTime: number */ /* :: lastTime: number */ /* :: frames: number */ /* :: canvas: HTMLCanvasElement */ /* :: gl: WebGLRenderingContext */ /* :: program: any */ /* :: camera: Camera */ /* :: errorCallback: Function */ constructor(canvas, camera, errorCallback){
         this.errorCallback = errorCallback;
         this.startTime = window.performance.now();
         this.lastTime = this.startTime;
@@ -23252,7 +23284,6 @@ class ShaderAnimation {
         this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
         this.bindQuadFillingScreen();
         this.program = null;
-        this.uniforms = [];
     }
     renderLoop() {
         window.requestAnimationFrame(()=>this.renderLoop()
@@ -23282,7 +23313,7 @@ class ShaderAnimation {
             this.canvas.height
         ]);
         const cameraPositionLocation = gl.getUniformLocation(program, 'camera_position');
-        gl.uniform3fv(cameraPositionLocation, this.camera.position);
+        gl.uniform3fv(cameraPositionLocation, this.camera.positionArray);
         const cameraRotationLocation = gl.getUniformLocation(program, 'camera_rotation');
         gl.uniform2fv(cameraRotationLocation, [
             this.camera.rotation.x,
@@ -23296,11 +23327,17 @@ class ShaderAnimation {
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
-    updateFragmentShader(shaderSource, uniforms) {
+    updateFragmentShader(shaderSource) {
+        const compileShader = (shaderType, source)=>{
+            const shader = this.gl.createShader(shaderType);
+            if (!shader) throw Error('Failed to create shader');
+            this.gl.shaderSource(shader, source);
+            this.gl.compileShader(shader);
+            return shader;
+        };
         const gl = this.gl;
-        const vertexShader = this.compileShader(gl.VERTEX_SHADER, vertexShaderText);
-        const fragmentShader = this.compileShader(gl.FRAGMENT_SHADER, shaderSource);
-        this.uniforms = uniforms;
+        const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderText);
+        const fragmentShader = compileShader(gl.FRAGMENT_SHADER, shaderSource);
         const program = gl.createProgram();
         if (!program) throw Error('Failed to create program.');
         gl.attachShader(program, vertexShader);
@@ -23333,13 +23370,6 @@ class ShaderAnimation {
             1,
             1
         ]), this.gl.STATIC_DRAW);
-    }
-    compileShader(shaderType, source) {
-        const shader = this.gl.createShader(shaderType);
-        if (!shader) throw Error('Failed to create shader');
-        this.gl.shaderSource(shader, source);
-        this.gl.compileShader(shader);
-        return shader;
     }
 }
 const KEY_MAP = new Map();
