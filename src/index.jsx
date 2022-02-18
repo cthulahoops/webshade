@@ -13,10 +13,12 @@ import { ShaderAnimation, Camera } from './animation.js'
 import { scan } from '../scanner.js'
 import { sliderRange, formatLike } from './numbers.js'
 
+const DEFAULT_SHADERS = ['geometry.frag', 'cone.frag', 'marching.frag', 'manyspheres.frag', 'mixing.frag', 'simple.frag', 'wheel.frag']
+
 function App () {
   const [code, setCode] = useState('#version 100\n')
   const selection = useSelection()
-  const [shader, setShader] = useState('geometry.frag')
+  const [shader, setShader] = useState(window.location.hash.substr(1))
   const [errors, setErrors] = useState('')
 
   const [position, setPosition] = useState({ x: 0, y: 1, z: 0 })
@@ -41,6 +43,10 @@ function App () {
   useEffect(() => {
     console.log('Shader selected: ', shader)
     selectShader(shader, setCode)
+  }, [shader])
+
+  useEffect(() => {
+    window.location.hash = '#' + shader
   }, [shader])
 
   useEffect(() => {
@@ -82,15 +88,7 @@ function App () {
           onKeyUp={(event) => camera.current.handleKeyUp(event)}
         />
 
-        <select id='shader-selection' onChange={(event) => setShader(event.target.value)}>
-          <option>geometry.frag</option>
-          <option>cone.frag</option>
-          <option>marching.frag</option>
-          <option>manyspheres.frag</option>
-          <option>mixing.frag</option>
-          <option>simple.frag</option>
-          <option>wheel.frag</option>
-        </select>
+        <Selection selected={shader} options={DEFAULT_SHADERS} handleChange={setShader} />
         FPS = <span id='fps' />
         <div>Selection: {selection.value.start}-{selection.value.end}</div>
         <div>Current token: <Token token={currentToken} onChange={updateToken} /></div>
@@ -110,6 +108,16 @@ function App () {
         />
       </div>
     </div>
+  )
+}
+
+function Selection ({ options, selected, handleChange }) {
+  return (
+    <select defaultValue={selected} onChange={(event) => handleChange(event.target.value)}>
+      {
+        options.map((option) => <option key={option}>{option}</option>)
+      }
+    </select>
   )
 }
 
