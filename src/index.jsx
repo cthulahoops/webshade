@@ -18,7 +18,7 @@ const DEFAULT_SHADERS = ['geometry.frag', 'cone.frag', 'marching.frag', 'manysph
 function App () {
   const [code, setCode] = useState('#version 100\n')
   const selection = useSelection()
-  const [shader, setShader] = useState(window.location.hash.substr(1))
+  const [shader, setShader] = useState(window.location.hash.substr(1) || 'geometry.frag')
   const [errors, setErrors] = useState('')
   const [fps, setFPS] = useState(0)
 
