@@ -27,14 +27,14 @@ export class Camera {
     this.position = this.position.add(this.velocity.scale(0.2).rotateY(this.rotation.y))
   }
 
-  handleMouseMove (event) {
+  handleMouseMove (event /* : { movementX: number, movementY: number } */) {
     if (document.pointerLockElement) {
       this.rotation.y += event.movementX / 100
       this.rotation.x += event.movementY / 100
     }
   }
 
-  handleKeyDown (event) {
+  handleKeyDown (event /* : { key: number, repeat: bool } */) {
     if (event.repeat) {
       return
     }
@@ -47,7 +47,7 @@ export class Camera {
     }
   }
 
-  handleKeyUp (event) {
+  handleKeyUp (event /* : { key: number } */) {
     if (!document.pointerLockElement) {
       return
     }
@@ -65,10 +65,10 @@ export class ShaderAnimation {
   /* :: canvas: HTMLCanvasElement */
   /* :: gl: WebGLRenderingContext */
   /* :: program: any */
-  /* :: uniforms: Array<string> */
   /* :: camera: Camera */
+  /* :: errorCallback: Function */
 
-  constructor (canvas /*: HTMLCanvasElement */, camera /* : Camera */, errorCallback) {
+  constructor (canvas /*: HTMLCanvasElement */, camera /* : Camera */, errorCallback /* : Function */) {
     this.errorCallback = errorCallback
     this.startTime = window.performance.now()
     this.lastTime = this.startTime
@@ -90,7 +90,6 @@ export class ShaderAnimation {
     this.bindQuadFillingScreen()
 
     this.program = null
-    this.uniforms = []
   }
 
   renderLoop () {
@@ -111,7 +110,7 @@ export class ShaderAnimation {
     }
   }
 
-  render (time) {
+  render (time /* : number */) {
     const gl = this.gl
     const program = this.program
 
@@ -142,19 +141,27 @@ export class ShaderAnimation {
     gl.drawArrays(gl.TRIANGLES, 0, 6)
   }
 
-  updateFragmentShader (shaderSource, uniforms) {
+  updateFragmentShader (shaderSource /* : string */) {
+    const compileShader = (shaderType, source) => {
+      const shader = this.gl.createShader(shaderType)
+      if (!shader) {
+        throw Error('Failed to create shader')
+      }
+      this.gl.shaderSource(shader, source)
+      this.gl.compileShader(shader)
+      return shader
+    }
+
     const gl = this.gl
 
-    const vertexShader = this.compileShader(
+    const vertexShader = compileShader(
       gl.VERTEX_SHADER,
       vertexShaderText)
 
-    const fragmentShader = this.compileShader(
+    const fragmentShader = compileShader(
       gl.FRAGMENT_SHADER,
       shaderSource
     )
-
-    this.uniforms = uniforms
 
     const program = gl.createProgram()
     if (!program) {
@@ -191,16 +198,6 @@ export class ShaderAnimation {
         1.0, 1.0]),
       this.gl.STATIC_DRAW
     )
-  }
-
-  compileShader (shaderType, source) {
-    const shader = this.gl.createShader(shaderType)
-    if (!shader) {
-      throw Error('Failed to create shader')
-    }
-    this.gl.shaderSource(shader, source)
-    this.gl.compileShader(shader)
-    return shader
   }
 }
 
