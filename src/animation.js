@@ -37,7 +37,7 @@ export class Camera {
       return
     }
     this.rotation = {
-      x: this.rotation.x + event.movementY / 100,
+      x: clamp(this.rotation.x + event.movementY / 100, -Math.PI / 2, Math.PI / 2),
       y: this.rotation.y + event.movementX / 100
     }
     this.handleChange(this)
@@ -229,3 +229,7 @@ void main() {
     gl_Position = vec4(a_position, 0, 1);
 }
 `
+
+function clamp (value, min, max) {
+  return Math.min(Math.max(value, min), max)
+}
