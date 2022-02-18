@@ -6,15 +6,16 @@ export class Camera {
   /* :: position : Vector */
   /* :: velocity : Vector */
   /* :: rotation : { x: number, y: number } */
+  /* :: handleChange: Function */
 
   constructor (
-    x /* : number */,
-    y /* : number */,
-    z /* : number */
+    position /* : { x: number, y: number, z: number } */,
+    handleChange /* : Function */
   ) {
-    this.position = new Vector(x, y, z)
+    this.position = new Vector(position.x, position.y, position.z)
     this.velocity = new Vector(0, 0, 0)
     this.rotation = { x: 0, y: 0 }
+    this.handleChange = handleChange
 
     window.setInterval(() => this.tick(), 50)
   }
@@ -24,14 +25,22 @@ export class Camera {
   }
 
   tick () {
+    if (this.velocity.x === 0 && this.velocity.y === 0 && this.velocity.z === 0) {
+      return
+    }
     this.position = this.position.add(this.velocity.scale(0.2).rotateY(this.rotation.y))
+    this.handleChange(this)
   }
 
   handleMouseMove (event /* : { movementX: number, movementY: number } */) {
-    if (document.pointerLockElement) {
-      this.rotation.y += event.movementX / 100
-      this.rotation.x += event.movementY / 100
+    if (!document.pointerLockElement) {
+      return
     }
+    this.rotation = {
+      x: this.rotation.x + event.movementY / 100,
+      y: this.rotation.y + event.movementX / 100
+    }
+    this.handleChange(this)
   }
 
   handleKeyDown (event /* : { key: number, repeat: bool } */) {
@@ -44,6 +53,7 @@ export class Camera {
     const direction = KEY_MAP.get(event.key)
     if (direction) {
       this.velocity = this.velocity.add(direction)
+      this.handleChange(this)
     }
   }
 
@@ -54,6 +64,7 @@ export class Camera {
     const direction = KEY_MAP.get(event.key)
     if (direction) {
       this.velocity = this.velocity.subtract(direction)
+      this.handleChange(this)
     }
   }
 }

@@ -1,3 +1,5 @@
+// @flow
+
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import ReactDOM from 'react-dom'
 
@@ -28,9 +30,9 @@ function tokenAt (tokens, position) {
   }
 }
 
-const compileRender = debounce((animation, source) => {
+const compileRender = debounce((animation /* : ShaderAnimation */, source) => {
   console.log('Debounced: Updating and compiling shader!')
-  animation.updateFragmentShader(source, [])
+  animation.updateFragmentShader(source)
 }, 200)
 
 async function selectShader (shaderName, setCode) {
@@ -44,7 +46,7 @@ function stringSplice (string, position, oldLength, value) {
   return string.substr(0, position) + value + string.substr(position + oldLength)
 }
 
-function Token (props) {
+function Token (props /* : { token: Object, onChange: Function } */) {
   if (!props.token) {
     return <span>No current token.</span>
   }
@@ -68,6 +70,13 @@ function App () {
   const [shader, setShader] = useState('geometry.frag')
   const [errors, setErrors] = useState('')
 
+  const [position, setPosition] = useState({ x: 0, y: 1, z: 0 })
+  const [rotation, setRotation] = useState({ x: 0, y: 0 })
+  const camera = useRef(new Camera(position, (c) => {
+    setPosition(c.position)
+    setRotation(c.rotation)
+  }))
+
   const canvas = useRef()
   const animation = useRef()
 
@@ -75,8 +84,7 @@ function App () {
     if (!canvas.current) {
       return
     }
-    const camera = new Camera(0, 1, 0)
-    const newAnimation = new ShaderAnimation(canvas.current, camera, setErrors)
+    const newAnimation = new ShaderAnimation(canvas.current, camera.current, setErrors)
     newAnimation.renderLoop()
     animation.current = newAnimation
   }, [canvas])
@@ -87,7 +95,9 @@ function App () {
   }, [shader])
 
   useEffect(() => {
-    compileRender(animation.current, code)
+    if (animation.current) {
+      compileRender(animation.current, code)
+    }
   }, [animation, code])
 
   const tokens = useMemo(() => {
@@ -97,10 +107,13 @@ function App () {
       return []
     }
   }, [code])
-  const currentToken = useMemo(() => tokenAt(tokens, selectionStart), [tokens, selectionStart])
+  const currentToken /* : { position: number, value: string } | void */ = useMemo(() => tokenAt(tokens, selectionStart), [tokens, selectionStart])
 
   const updateToken = (value) => {
     if (!value) {
+      return
+    }
+    if (!currentToken) {
       return
     }
     const newCode = stringSplice(code, currentToken.position, currentToken.value.length, formatLike(parseFloat(value), currentToken.value))
@@ -114,10 +127,10 @@ function App () {
           tabIndex={-1}
           ref={canvas}
           id='glscreen'
-          onClick={() => canvas.current.requestPointerLock()}
-          onMouseMove={(event) => animation.current.camera.handleMouseMove(event)}
-          onKeyDown={(event) => animation.current.camera.handleKeyDown(event)}
-          onKeyUp={(event) => animation.current.camera.handleKeyUp(event)}
+          onClick={() => { if (canvas.current) canvas.current.requestPointerLock() }}
+          onMouseMove={(event) => camera.current.handleMouseMove(event)}
+          onKeyDown={(event) => camera.current.handleKeyDown(event)}
+          onKeyUp={(event) => camera.current.handleKeyUp(event)}
         />
 
         <select id='shader-selection' onChange={(event) => setShader(event.target.value)}>
@@ -132,6 +145,8 @@ function App () {
         FPS = <span id='fps' />
         <div>Selection: {selectionStart}-{selectionEnd}</div>
         <div>Current token: <Token token={currentToken} onChange={updateToken} /></div>
+        <div>({position.x}, {position.y}, {position.z})</div>
+        <div>({rotation.x}, {rotation.y})</div>
         <ul id='uniforms' />
         <pre>{errors}</pre>
       </div>
