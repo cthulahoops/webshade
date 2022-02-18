@@ -20,6 +20,7 @@ function App () {
   const selection = useSelection()
   const [shader, setShader] = useState(window.location.hash.substr(1))
   const [errors, setErrors] = useState('')
+  const [fps, setFPS] = useState(0)
 
   const [position, setPosition] = useState({ x: 0, y: 1, z: 0 })
   const [rotation, setRotation] = useState({ x: 0, y: 0 })
@@ -35,7 +36,11 @@ function App () {
     if (!canvas.current) {
       return
     }
-    const newAnimation = new ShaderAnimation(canvas.current, camera.current, setErrors)
+    const newAnimation = new ShaderAnimation(
+      canvas.current,
+      camera.current,
+      setErrors,
+      setFPS)
     newAnimation.renderLoop()
     animation.current = newAnimation
   }, [canvas])
@@ -89,7 +94,7 @@ function App () {
         />
 
         <Selection selected={shader} options={DEFAULT_SHADERS} handleChange={setShader} />
-        FPS = <span id='fps' />
+        <div>FPS = <span>{fps}</span></div>
         <div>Selection: {selection.value.start}-{selection.value.end}</div>
         <div>Current token: <Token token={currentToken} onChange={updateToken} /></div>
         <CameraValues position={position} rotation={rotation} />

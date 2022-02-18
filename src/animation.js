@@ -78,9 +78,11 @@ export class ShaderAnimation {
   /* :: program: any */
   /* :: camera: Camera */
   /* :: errorCallback: Function */
+  /* :: fpsCallback: Function */
 
-  constructor (canvas /*: HTMLCanvasElement */, camera /* : Camera */, errorCallback /* : Function */) {
+  constructor (canvas /*: HTMLCanvasElement */, camera /* : Camera */, errorCallback /* : Function */, fpsCallback /* : Function */) {
     this.errorCallback = errorCallback
+    this.fpsCallback = fpsCallback
     this.startTime = window.performance.now()
     this.lastTime = this.startTime
     this.frames = 0
@@ -111,7 +113,7 @@ export class ShaderAnimation {
       this.render(time)
 
       if (this.frames >= 100) {
-        // getFPSSpan().textContent = Math.round(this.frames / (time - this.lastTime)).toString()
+        this.fpsCallback(Math.round(this.frames / (time - this.lastTime)))
 
         this.frames = 0
         this.lastTime = time
@@ -140,12 +142,6 @@ export class ShaderAnimation {
 
     const cameraRotationLocation = gl.getUniformLocation(program, 'camera_rotation')
     gl.uniform2fv(cameraRotationLocation, ([this.camera.rotation.x, this.camera.rotation.y] /* : [number, number] */))
-
-    // for (const uniform of this.uniforms) {
-    //   const uniformLocation = gl.getUniformLocation(program, uniform)
-    //   const color = colorToVec(getInputElement(uniform).value)
-    //   gl.uniform3fv(uniformLocation, color)
-    // }
 
     gl.clearColor(1.0, 0.0, 0.0, 1.0)
     gl.clear(gl.COLOR_BUFFER_BIT)
