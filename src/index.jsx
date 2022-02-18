@@ -13,56 +13,6 @@ import { ShaderAnimation, Camera } from './animation.js'
 import { scan } from '../scanner.js'
 import { sliderRange, formatLike } from './numbers.js'
 
-function debounce (callbackFunction, delay) {
-  let timer
-  return (...args) => {
-    clearTimeout(timer)
-    timer = setTimeout(() => callbackFunction(...args), delay)
-  }
-}
-
-function tokenAt (tokens, position) {
-  for (const token of tokens) {
-    const tokenEndPosition = token.position + token.value.length
-    if (tokenEndPosition > position || (token.type === 'number' && tokenEndPosition === position)) {
-      return token
-    }
-  }
-}
-
-const compileRender = debounce((animation /* : ShaderAnimation */, source) => {
-  console.log('Debounced: Updating and compiling shader!')
-  animation.updateFragmentShader(source)
-}, 200)
-
-async function selectShader (shaderName, setCode) {
-  const shaderResponse = await window.fetch(shaderName)
-  const shaderSource = await shaderResponse.text()
-  setCode(shaderSource)
-  console.log(shaderName)
-}
-
-function stringSplice (string, position, oldLength, value) {
-  return string.substr(0, position) + value + string.substr(position + oldLength)
-}
-
-function Token (props /* : { token: Object, onChange: Function } */) {
-  if (!props.token) {
-    return <span>No current token.</span>
-  }
-  if (props.token.type === 'number') {
-    const range = sliderRange(props.token.value)
-    return (
-      <div>
-        {props.token.type}
-        <input style={{ width: '50em' }} type='range' min={range.min} max={range.max} step={range.step} value={props.token.value} onChange={(event) => props.onChange(event.target.value)} />
-        <span>{props.token.value}</span>
-      </div>
-    )
-  }
-  return <div>{props.token.type} {props.token.value}</div>
-}
-
 function App () {
   const [code, setCode] = useState('#version 100\n')
   const selection = useSelection()
@@ -161,6 +111,56 @@ function App () {
       </div>
     </div>
   )
+}
+
+function debounce (callbackFunction, delay) {
+  let timer
+  return (...args) => {
+    clearTimeout(timer)
+    timer = setTimeout(() => callbackFunction(...args), delay)
+  }
+}
+
+function tokenAt (tokens, position) {
+  for (const token of tokens) {
+    const tokenEndPosition = token.position + token.value.length
+    if (tokenEndPosition > position || (token.type === 'number' && tokenEndPosition === position)) {
+      return token
+    }
+  }
+}
+
+const compileRender = debounce((animation /* : ShaderAnimation */, source) => {
+  console.log('Debounced: Updating and compiling shader!')
+  animation.updateFragmentShader(source)
+}, 200)
+
+async function selectShader (shaderName, setCode) {
+  const shaderResponse = await window.fetch(shaderName)
+  const shaderSource = await shaderResponse.text()
+  setCode(shaderSource)
+  console.log(shaderName)
+}
+
+function stringSplice (string, position, oldLength, value) {
+  return string.substr(0, position) + value + string.substr(position + oldLength)
+}
+
+function Token (props /* : { token: Object, onChange: Function } */) {
+  if (!props.token) {
+    return <span>No current token.</span>
+  }
+  if (props.token.type === 'number') {
+    const range = sliderRange(props.token.value)
+    return (
+      <div>
+        {props.token.type}
+        <input style={{ width: '50em' }} type='range' min={range.min} max={range.max} step={range.step} value={props.token.value} onChange={(event) => props.onChange(event.target.value)} />
+        <span>{props.token.value}</span>
+      </div>
+    )
+  }
+  return <div>{props.token.type} {props.token.value}</div>
 }
 
 function useSelection () {
