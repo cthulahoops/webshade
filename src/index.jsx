@@ -13,7 +13,7 @@ import { ShaderAnimation, Camera } from './animation.js'
 import { scan } from '../scanner.js'
 import { sliderRange, formatLike } from './numbers.js'
 
-const DEFAULT_SHADERS = ['geometry.frag', 'cone.frag', 'marching.frag', 'manyspheres.frag', 'mixing.frag', 'simple.frag', 'wheel.frag']
+const DEFAULT_SHADERS = ['dome.frag', 'geometry.frag', 'cone.frag', 'marching.frag', 'manyspheres.frag', 'mixing.frag', 'simple.frag', 'wheel.frag']
 
 function App () {
   const [code, setCode] = useState('#version 100\n')
@@ -24,10 +24,7 @@ function App () {
 
   const [position, setPosition] = useState({ x: 0, y: 1, z: 0 })
   const [rotation, setRotation] = useState({ x: 0, y: 0 })
-  const camera = useRef(new Camera(position, (c) => {
-    setPosition(c.position)
-    setRotation(c.rotation)
-  }))
+  const camera = useRef(new Camera(position, (c) => {}))
 
   const canvas = useRef()
   const animation = useRef()
