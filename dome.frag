@@ -114,10 +114,8 @@ float sd_mirror(vec3 p, vec3 offset) {
 }
 
 float sd_dome(vec3 p) {
-  return difference_sdf(
-     sd_cube(p, 10., vec3(0)),
-     sd_sphere(p, 10., vec3(0))
-  );
+  return -sd_sphere(p, 5., vec3(0));
+
 }
 
 Surface min_surface(Surface a, Surface b) {
@@ -182,7 +180,7 @@ Surface sd_scene(vec3 p) {
 
   Surface dome = Surface(
       sd_dome(p),
-      Material(vec3(0), vec3(1.0), vec3(0))
+      Material(vec3(0), 1.-step(mod(p.y, 1.), 0.04) * vec3(0.6), vec3(0))
   );
   Surface scene;
 
