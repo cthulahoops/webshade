@@ -1,5 +1,3 @@
-#version 100
-
 #ifdef GL_FRAGMENT_PRECISION_HIGH
   precision highp float;
 #else
@@ -20,7 +18,7 @@ const float MAX_DIST = 50.0;
 
 const vec3 BACKGROUND_COLOR = vec3(0.1, 0.05, 0.02);
 
-const vec3 AMBIENT_LIGHT = 0.0 * vec3(0.18, 0.18, 0.2);
+const vec3 AMBIENT_LIGHT =  1.0 * vec3(0.18, 0.18, 0.2);
 
 struct Material {
   vec3 color;
@@ -115,6 +113,11 @@ float sd_mirror(vec3 p, vec3 offset) {
   );
 }
 
+float sd_dome(vec3 p) {
+  return -sd_sphere(p, 5., vec3(0));
+
+}
+
 Surface min_surface(Surface a, Surface b) {
   if (a.distance < b.distance) {
      return a;
@@ -137,7 +140,7 @@ float floor_height(vec3 p) {
 Surface sd_floor(vec3 p, vec3 color) {
   float tile = mod(floor(p.x) + floor(p.z), 2.0);
   vec3 reflectance = vec3(0.);
-  return Surface(p.y - floor_height(p), Material((0.5 + 0.5 * tile) * color, tile * vec3(0.8), vec3(0)));
+  return Surface(p.y - floor_height(p), Material((0.5 + 0.5 * tile) * color, tile * vec3(0.1), vec3(0)));
 }
 
 vec3 on_floor(vec3 p) {
@@ -175,11 +178,15 @@ Surface sd_scene(vec3 p) {
       sd_sphere(p, 0.05, LIGHT2.position),
       Material(vec3(0), vec3(0.), LIGHT2.color));
 
-
+  Surface dome = Surface(
+      sd_dome(p),
+      Material(vec3(0), 1.-step(mod(p.y, 1.), 0.04) * vec3(0.6), vec3(0))
+  );
   Surface scene;
 
   scene = min_surface(floor, cube);
   scene = min_surface(white_cube, scene);
+  scene = min_surface(dome, scene);
   scene = min_surface(light1, scene);
   scene = min_surface(light2, scene);
   scene = min_surface(cylinder, scene);

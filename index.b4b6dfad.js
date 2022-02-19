@@ -539,6 +539,247 @@ var _prismGlsl = require("prismjs/components/prism-glsl");
 var _animationJs = require("./animation.js");
 var _scannerJs = require("../scanner.js");
 var _numbersJs = require("./numbers.js");
+const DEFAULT_SHADERS = [
+    'dome.frag',
+    'geometry.frag',
+    'cone.frag',
+    'marching.frag',
+    'manyspheres.frag',
+    'mixing.frag',
+    'simple.frag',
+    'wheel.frag'
+];
+function App() {
+    const [code1, setCode] = _react.useState('#version 100\n');
+    const selection = useSelection();
+    const [shader, setShader] = _react.useState(window.location.hash.substr(1) || 'geometry.frag');
+    const [errors, setErrors] = _react.useState('');
+    const [fps, setFPS] = _react.useState(0);
+    const [position, setPosition] = _react.useState({
+        x: 0,
+        y: 1,
+        z: 0
+    });
+    const [rotation, setRotation] = _react.useState({
+        x: 0,
+        y: 0
+    });
+    const camera = _react.useRef(new _animationJs.Camera(position, (c)=>{
+    }));
+    const canvas = _react.useRef();
+    const animation = _react.useRef();
+    _react.useEffect(()=>{
+        if (!canvas.current) return;
+        const newAnimation = new _animationJs.ShaderAnimation(canvas.current, camera.current, setErrors, setFPS);
+        newAnimation.renderLoop();
+        animation.current = newAnimation;
+    }, [
+        canvas
+    ]);
+    _react.useEffect(()=>{
+        console.log('Shader selected: ', shader);
+        selectShader(shader, setCode);
+    }, [
+        shader
+    ]);
+    _react.useEffect(()=>{
+        window.location.hash = '#' + shader;
+    }, [
+        shader
+    ]);
+    _react.useEffect(()=>{
+        if (animation.current) compileRender(animation.current, code1);
+    }, [
+        animation,
+        code1
+    ]);
+    const tokens = _react.useMemo(()=>{
+        try {
+            return _scannerJs.scan(code1);
+        } catch (err) {
+            return [];
+        }
+    }, [
+        code1
+    ]);
+    const currentToken = _react.useMemo(()=>tokenAt(tokens, selection.value.start)
+    , [
+        tokens,
+        selection.value.start
+    ]);
+    const updateToken = (value)=>{
+        if (!value) return;
+        if (!currentToken) return;
+        const newCode = stringSplice(code1, currentToken.position, currentToken.value.length, _numbersJs.formatLike(parseFloat(value), currentToken.value));
+        setCode(newCode);
+    };
+    return(/*#__PURE__*/ _reactDefault.default.createElement("div", {
+        className: "grid_container",
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 76,
+            columnNumber: 10
+        },
+        __self: this
+    }, /*#__PURE__*/ _reactDefault.default.createElement("div", {
+        className: "canvas",
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 77,
+            columnNumber: 7
+        },
+        __self: this
+    }, /*#__PURE__*/ _reactDefault.default.createElement("canvas", {
+        tabIndex: -1,
+        ref: canvas,
+        id: "glscreen",
+        onClick: ()=>{
+            if (canvas.current) canvas.current.requestPointerLock();
+        },
+        onMouseMove: (event)=>camera.current.handleMouseMove(event)
+        ,
+        onKeyDown: (event)=>camera.current.handleKeyDown(event)
+        ,
+        onKeyUp: (event)=>camera.current.handleKeyUp(event)
+        ,
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 78,
+            columnNumber: 9
+        },
+        __self: this
+    }), /*#__PURE__*/ _reactDefault.default.createElement(Selection, {
+        selected: shader,
+        options: DEFAULT_SHADERS,
+        handleChange: setShader,
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 82,
+            columnNumber: 9
+        },
+        __self: this
+    }), /*#__PURE__*/ _reactDefault.default.createElement("div", {
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 83,
+            columnNumber: 9
+        },
+        __self: this
+    }, "FPS = ", /*#__PURE__*/ _reactDefault.default.createElement("span", {
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 83,
+            columnNumber: 20
+        },
+        __self: this
+    }, fps)), /*#__PURE__*/ _reactDefault.default.createElement("div", {
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 84,
+            columnNumber: 9
+        },
+        __self: this
+    }, "Selection: ", selection.value.start, "-", selection.value.end), /*#__PURE__*/ _reactDefault.default.createElement("div", {
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 85,
+            columnNumber: 9
+        },
+        __self: this
+    }, "Current token: ", /*#__PURE__*/ _reactDefault.default.createElement(Token, {
+        token: currentToken,
+        onChange: updateToken,
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 85,
+            columnNumber: 29
+        },
+        __self: this
+    })), /*#__PURE__*/ _reactDefault.default.createElement(CameraValues, {
+        position: position,
+        rotation: rotation,
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 86,
+            columnNumber: 9
+        },
+        __self: this
+    }), /*#__PURE__*/ _reactDefault.default.createElement("pre", {
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 87,
+            columnNumber: 9
+        },
+        __self: this
+    }, errors)), /*#__PURE__*/ _reactDefault.default.createElement("div", {
+        className: "source",
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 90,
+            columnNumber: 7
+        },
+        __self: this
+    }, /*#__PURE__*/ _reactDefault.default.createElement(_simpleEditorJsxDefault.default, {
+        id: "shader_source",
+        value: code1,
+        onValueChange: setCode,
+        onSelectionChange: selection.handleSelectionChange,
+        highlight: (code)=>_prismCore.highlight(code, _prismCore.languages.glsl)
+        ,
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 91,
+            columnNumber: 9
+        },
+        __self: this
+    }))));
+}
+function Selection({ options , selected , handleChange  }) {
+    return(/*#__PURE__*/ _reactDefault.default.createElement("select", {
+        defaultValue: selected,
+        onChange: (event)=>handleChange(event.target.value)
+        ,
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 101,
+            columnNumber: 10
+        },
+        __self: this
+    }, options.map((option)=>/*#__PURE__*/ _reactDefault.default.createElement("option", {
+            key: option,
+            __source: {
+                fileName: "src/index.jsx",
+                lineNumber: 102,
+                columnNumber: 30
+            },
+            __self: this
+        }, option)
+    )));
+}
+function CameraValues({ position , rotation  }) {
+    return(/*#__PURE__*/ _reactDefault.default.createElement("div", {
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 110,
+            columnNumber: 10
+        },
+        __self: this
+    }, /*#__PURE__*/ _reactDefault.default.createElement("div", {
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 111,
+            columnNumber: 7
+        },
+        __self: this
+    }, "position = (", position.x.toFixed(3), ", ", position.y.toFixed(3), ", ", position.z.toFixed(3), ")"), /*#__PURE__*/ _reactDefault.default.createElement("div", {
+        __source: {
+            fileName: "src/index.jsx",
+            lineNumber: 112,
+            columnNumber: 7
+        },
+        __self: this
+    }, "rotation = (", rotation.x.toFixed(3), ", ", rotation.y.toFixed(3), ")")));
+}
 function debounce(callbackFunction, delay) {
     let timer;
     return (...args)=>{
@@ -570,7 +811,7 @@ function Token(props) {
     if (!props.token) return(/*#__PURE__*/ _reactDefault.default.createElement("span", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 52,
+            lineNumber: 156,
             columnNumber: 12
         },
         __self: this
@@ -580,7 +821,7 @@ function Token(props) {
         return(/*#__PURE__*/ _reactDefault.default.createElement("div", {
             __source: {
                 fileName: "src/index.jsx",
-                lineNumber: 57,
+                lineNumber: 161,
                 columnNumber: 12
             },
             __self: this
@@ -597,14 +838,14 @@ function Token(props) {
             ,
             __source: {
                 fileName: "src/index.jsx",
-                lineNumber: 59,
+                lineNumber: 163,
                 columnNumber: 9
             },
             __self: this
         }), /*#__PURE__*/ _reactDefault.default.createElement("span", {
             __source: {
                 fileName: "src/index.jsx",
-                lineNumber: 62,
+                lineNumber: 166,
                 columnNumber: 9
             },
             __self: this
@@ -613,259 +854,33 @@ function Token(props) {
     return(/*#__PURE__*/ _reactDefault.default.createElement("div", {
         __source: {
             fileName: "src/index.jsx",
-            lineNumber: 66,
+            lineNumber: 170,
             columnNumber: 10
         },
         __self: this
     }, props.token.type, " ", props.token.value));
 }
-function App() {
-    const [code1, setCode] = _react.useState('#version 100\n');
-    const [selectionStart, setSelectionStart] = _react.useState(0);
-    const [selectionEnd, setSelectionEnd] = _react.useState(0);
-    const [shader, setShader] = _react.useState('geometry.frag');
-    const [errors, setErrors] = _react.useState('');
-    const [position, setPosition] = _react.useState({
-        x: 0,
-        y: 1,
-        z: 0
+function useSelection() {
+    const [selection, setSelection] = _react.useState({
+        start: 0,
+        end: 0
     });
-    const [rotation, setRotation] = _react.useState({
-        x: 0,
-        y: 0
-    });
-    const camera = _react.useRef(new _animationJs.Camera(position, (c)=>{
-        setPosition(c.position);
-        setRotation(c.rotation);
-    }));
-    const canvas = _react.useRef();
-    const animation = _react.useRef();
-    _react.useEffect(()=>{
-        if (!canvas.current) return;
-        const newAnimation = new _animationJs.ShaderAnimation(canvas.current, camera.current, setErrors);
-        newAnimation.renderLoop();
-        animation.current = newAnimation;
-    }, [
-        canvas
-    ]);
-    _react.useEffect(()=>{
-        console.log('Shader selected: ', shader);
-        selectShader(shader, setCode);
-    }, [
-        shader
-    ]);
-    _react.useEffect(()=>{
-        if (animation.current) compileRender(animation.current, code1);
-    }, [
-        animation,
-        code1
-    ]);
-    const tokens = _react.useMemo(()=>{
-        try {
-            return _scannerJs.scan(code1);
-        } catch (err) {
-            return [];
-        }
-    }, [
-        code1
-    ]);
-    const currentToken = _react.useMemo(()=>tokenAt(tokens, selectionStart)
-    , [
-        tokens,
-        selectionStart
-    ]);
-    const updateToken = (value)=>{
-        if (!value) return;
-        if (!currentToken) return;
-        const newCode = stringSplice(code1, currentToken.position, currentToken.value.length, _numbersJs.formatLike(parseFloat(value), currentToken.value));
-        setCode(newCode);
-    };
-    return(/*#__PURE__*/ _reactDefault.default.createElement("div", {
-        className: "grid_container",
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 132,
-            columnNumber: 10
-        },
-        __self: this
-    }, /*#__PURE__*/ _reactDefault.default.createElement("div", {
-        className: "canvas",
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 133,
-            columnNumber: 7
-        },
-        __self: this
-    }, /*#__PURE__*/ _reactDefault.default.createElement("canvas", {
-        tabIndex: -1,
-        ref: canvas,
-        id: "glscreen",
-        onClick: ()=>{
-            if (canvas.current) canvas.current.requestPointerLock();
-        },
-        onMouseMove: (event)=>camera.current.handleMouseMove(event)
-        ,
-        onKeyDown: (event)=>camera.current.handleKeyDown(event)
-        ,
-        onKeyUp: (event)=>camera.current.handleKeyUp(event)
-        ,
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 134,
-            columnNumber: 9
-        },
-        __self: this
-    }), /*#__PURE__*/ _reactDefault.default.createElement("select", {
-        id: "shader-selection",
-        onChange: (event)=>setShader(event.target.value)
-        ,
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 138,
-            columnNumber: 9
-        },
-        __self: this
-    }, /*#__PURE__*/ _reactDefault.default.createElement("option", {
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 139,
-            columnNumber: 11
-        },
-        __self: this
-    }, "geometry.frag"), /*#__PURE__*/ _reactDefault.default.createElement("option", {
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 140,
-            columnNumber: 11
-        },
-        __self: this
-    }, "cone.frag"), /*#__PURE__*/ _reactDefault.default.createElement("option", {
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 141,
-            columnNumber: 11
-        },
-        __self: this
-    }, "marching.frag"), /*#__PURE__*/ _reactDefault.default.createElement("option", {
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 142,
-            columnNumber: 11
-        },
-        __self: this
-    }, "manyspheres.frag"), /*#__PURE__*/ _reactDefault.default.createElement("option", {
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 143,
-            columnNumber: 11
-        },
-        __self: this
-    }, "mixing.frag"), /*#__PURE__*/ _reactDefault.default.createElement("option", {
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 144,
-            columnNumber: 11
-        },
-        __self: this
-    }, "simple.frag"), /*#__PURE__*/ _reactDefault.default.createElement("option", {
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 145,
-            columnNumber: 11
-        },
-        __self: this
-    }, "wheel.frag")), "FPS = ", /*#__PURE__*/ _reactDefault.default.createElement("span", {
-        id: "fps",
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 147,
-            columnNumber: 15
-        },
-        __self: this
-    }), /*#__PURE__*/ _reactDefault.default.createElement("div", {
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 148,
-            columnNumber: 9
-        },
-        __self: this
-    }, "Selection: ", selectionStart, "-", selectionEnd), /*#__PURE__*/ _reactDefault.default.createElement("div", {
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 149,
-            columnNumber: 9
-        },
-        __self: this
-    }, "Current token: ", /*#__PURE__*/ _reactDefault.default.createElement(Token, {
-        token: currentToken,
-        onChange: updateToken,
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 149,
-            columnNumber: 29
-        },
-        __self: this
-    })), /*#__PURE__*/ _reactDefault.default.createElement("div", {
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 150,
-            columnNumber: 9
-        },
-        __self: this
-    }, "(", position.x, ", ", position.y, ", ", position.z, ")"), /*#__PURE__*/ _reactDefault.default.createElement("div", {
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 151,
-            columnNumber: 9
-        },
-        __self: this
-    }, "(", rotation.x, ", ", rotation.y, ")"), /*#__PURE__*/ _reactDefault.default.createElement("ul", {
-        id: "uniforms",
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 152,
-            columnNumber: 9
-        },
-        __self: this
-    }), /*#__PURE__*/ _reactDefault.default.createElement("pre", {
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 153,
-            columnNumber: 9
-        },
-        __self: this
-    }, errors)), /*#__PURE__*/ _reactDefault.default.createElement("div", {
-        className: "source",
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 156,
-            columnNumber: 7
-        },
-        __self: this
-    }, /*#__PURE__*/ _reactDefault.default.createElement(_simpleEditorJsxDefault.default, {
-        id: "shader_source",
-        value: code1,
-        onValueChange: setCode,
-        onSelectionChange: (event)=>{
+    return {
+        value: selection,
+        handleSelectionChange: (event)=>{
             console.log(event);
             if (event.target.selectionStart === event.target.textLength) return;
-            setSelectionStart(event.target.selectionStart);
-            setSelectionEnd(event.target.selectionEnd);
-        },
-        highlight: (code)=>_prismCore.highlight(code, _prismCore.languages.glsl)
-        ,
-        __source: {
-            fileName: "src/index.jsx",
-            lineNumber: 157,
-            columnNumber: 9
-        },
-        __self: this
-    }))));
+            setSelection({
+                start: event.target.selectionStart,
+                end: event.target.selectionEnd
+            });
+        }
+    };
 }
 _reactDomDefault.default.render(/*#__PURE__*/ _reactDefault.default.createElement(App, {
     __source: {
         fileName: "src/index.jsx",
-        lineNumber: 171,
+        lineNumber: 195,
         columnNumber: 17
     },
     __self: undefined
@@ -23245,7 +23260,7 @@ class Camera {
     handleMouseMove(event) {
         if (!document.pointerLockElement) return;
         this.rotation = {
-            x: this.rotation.x + event.movementY / 100,
+            x: clamp(this.rotation.x + event.movementY / 100, -Math.PI / 2, Math.PI / 2),
             y: this.rotation.y + event.movementX / 100
         };
         this.handleChange(this);
@@ -23269,8 +23284,9 @@ class Camera {
     }
 }
 class ShaderAnimation {
-    /* :: startTime: number */ /* :: lastTime: number */ /* :: frames: number */ /* :: canvas: HTMLCanvasElement */ /* :: gl: WebGLRenderingContext */ /* :: program: any */ /* :: camera: Camera */ /* :: errorCallback: Function */ constructor(canvas, camera, errorCallback){
+    /* :: startTime: number */ /* :: lastTime: number */ /* :: frames: number */ /* :: canvas: HTMLCanvasElement */ /* :: gl: WebGLRenderingContext */ /* :: program: any */ /* :: camera: Camera */ /* :: errorCallback: Function */ /* :: fpsCallback: Function */ constructor(canvas, camera, errorCallback, fpsCallback){
         this.errorCallback = errorCallback;
+        this.fpsCallback = fpsCallback;
         this.startTime = window.performance.now();
         this.lastTime = this.startTime;
         this.frames = 0;
@@ -23292,7 +23308,7 @@ class ShaderAnimation {
             const time = (window.performance.now() - this.startTime) / 1000;
             this.render(time);
             if (this.frames >= 100) {
-                // getFPSSpan().textContent = Math.round(this.frames / (time - this.lastTime)).toString()
+                this.fpsCallback(Math.round(this.frames / (time - this.lastTime)));
                 this.frames = 0;
                 this.lastTime = time;
             }
@@ -23318,11 +23334,7 @@ class ShaderAnimation {
         gl.uniform2fv(cameraRotationLocation, [
             this.camera.rotation.x,
             this.camera.rotation.y
-        ]); // for (const uniform of this.uniforms) {
-        //   const uniformLocation = gl.getUniformLocation(program, uniform)
-        //   const color = colorToVec(getInputElement(uniform).value)
-        //   gl.uniform3fv(uniformLocation, color)
-        // }
+        ]);
         gl.clearColor(1, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -23392,6 +23404,9 @@ void main() {
     gl_Position = vec4(a_position, 0, 1);
 }
 `;
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+}
 
 },{"../vector.js":"97lzA","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"97lzA":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
