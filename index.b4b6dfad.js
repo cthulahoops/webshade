@@ -547,7 +547,8 @@ const DEFAULT_SHADERS = [
     'manyspheres.frag',
     'mixing.frag',
     'simple.frag',
-    'wheel.frag'
+    'wheel.frag',
+    'polar.frag'
 ];
 function App() {
     const [code1, setCode] = _react.useState('#version 100\n');
