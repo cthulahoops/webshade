@@ -13,7 +13,7 @@ uniform float time;
 #define pi 3.141592
 
 float zero(float value) {
-   return step(value, 0.2) *  (1. - step(value, 0.));
+   return step(value, 0.1) *  (1. - step(value, -0.1));
 }
 
 void main() {
@@ -22,7 +22,13 @@ void main() {
     float angle = atan(uv.y, uv.x);
     float distance = length(uv);
 
-    float blue = zero(4. + sin(time + 12.0 * angle + 4.*pi / 3.) - 20. * mod(distance, 0.3));
+    float t = ceil(distance / 0.2);
 
-    gl_FragColor = vec4(0, 0, blue, 1.);
+    float line = zero(sin(2. * t + time + 12.0 * angle) - 8. * (mod(distance, 0.2) - 0.1));
+
+    gl_FragColor = vec4(
+      line * sin(3.0 * angle),
+      line * sin(3.0 * angle + 2.*pi / 3.),
+      line * sin(3.0 * angle + 4.*pi / 3.),
+      1.);
 }
