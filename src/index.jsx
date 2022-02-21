@@ -13,7 +13,7 @@ import { ShaderAnimation, Camera } from './animation.js'
 import { scan } from '../scanner.js'
 import { sliderRange, formatLike } from './numbers.js'
 
-const DEFAULT_SHADERS = ['dome.frag', 'geometry.frag', 'cone.frag', 'marching.frag', 'manyspheres.frag', 'mixing.frag', 'simple.frag', 'wheel.frag']
+const DEFAULT_SHADERS = ['dome.frag', 'geometry.frag', 'cone.frag', 'marching.frag', 'manyspheres.frag', 'mixing.frag', 'simple.frag', 'wheel.frag', 'polar.frag']
 
 function App () {
   const [code, setCode] = useState('#version 100\n')
