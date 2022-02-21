@@ -8,8 +8,13 @@
 precision mediump int;
 
 uniform vec2 resolution;
+uniform float time;
 
 #define pi 3.141592
+
+float zero(float value) {
+   return step(value, 0.2) *  (1. - step(value, 0.));
+}
 
 void main() {
     vec2 uv = 2.0 * ((gl_FragCoord.xy - resolution/2.)/ resolution.y);
@@ -17,9 +22,7 @@ void main() {
     float angle = atan(uv.y, uv.x);
     float distance = length(uv);
 
-    float red = 1. - step(sin(12.0 * angle) - distance, 0.);
-    float green = 1. - step(sin(12.0 * angle + 2.*pi/3.) - distance, 0.);
-    float blue = 1. - step(sin(12.0 * angle + 4.*pi / 3.) - distance, 0.);
+    float blue = zero(4. + sin(time + 12.0 * angle + 4.*pi / 3.) - 20. * mod(distance, 0.3));
 
-    gl_FragColor = vec4(red, green, blue, 1.);
+    gl_FragColor = vec4(0, 0, blue, 1.);
 }
