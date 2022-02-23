@@ -9,25 +9,40 @@ import 'prismjs/components/prism-clike'
 import 'prismjs/components/prism-c'
 import 'prismjs/components/prism-glsl'
 
+import { connectWebsocket } from './detect_changes_websocket.js'
 import { ShaderAnimation, Camera } from './animation.js'
 import { scan } from '../scanner.js'
 import { sliderRange, formatLike } from './numbers.js'
 
-const DEFAULT_SHADERS = ['dome.frag', 'geometry.frag', 'cone.frag', 'marching.frag', 'manyspheres.frag', 'mixing.frag', 'simple.frag', 'wheel.frag', 'polar.frag', 'teeth.frag', 'flower.frag', 'shell.frag']
+const DEFAULT_SHADERS = ['shell.frag', 'dome.frag', 'geometry.frag', 'cone.frag', 'marching.frag', 'manyspheres.frag', 'mixing.frag', 'simple.frag', 'wheel.frag', 'polar.frag', 'teeth.frag', 'flower.frag']
 
 function App () {
   const [code, setCode] = useState('#version 100\n')
   const selection = useSelection()
-  const [shader, setShader] = useState(window.location.hash.substr(1) || 'geometry.frag')
+  const [shader, setShader] = useState(window.location.hash.substr(1) || DEFAULT_SHADERS[0])
   const [errors, setErrors] = useState('')
   const [fps, setFPS] = useState(0)
 
-  const [position, setPosition] = useState({ x: 0, y: 1, z: 0 })
-  const [rotation, setRotation] = useState({ x: 0, y: 0 })
+  // const [position, setPosition] = useState({ x: 0, y: 1, z: 0 })
+  // const [rotation, setRotation] = useState({ x: 0, y: 0 })
+  const position = { x: 0, y: 1, z: 0 }
   const camera = useRef(new Camera(position, (c) => {}))
 
   const canvas = useRef()
   const animation = useRef()
+
+  useEffect(() => {
+    if (isLocalhost(window.location.hostname)) {
+      connectWebsocket((filename) => {
+        if (filename === shader) {
+          console.log('Refetching shader: ', shader)
+          fetchShaderCode(shader, setCode)
+        } else {
+          setShader(filename)
+        }
+      })
+    }
+  }, [])
 
   useEffect(() => {
     if (!canvas.current) {
@@ -44,7 +59,7 @@ function App () {
 
   useEffect(() => {
     console.log('Shader selected: ', shader)
-    selectShader(shader, setCode)
+    fetchShaderCode(shader, setCode)
   }, [shader])
 
   useEffect(() => {
@@ -94,7 +109,6 @@ function App () {
         <div>FPS = <span>{fps}</span></div>
         <div>Selection: {selection.value.start}-{selection.value.end}</div>
         <div>Current token: <Token token={currentToken} onChange={updateToken} /></div>
-        <CameraValues position={position} rotation={rotation} />
         <pre>{errors}</pre>
       </div>
 
@@ -121,15 +135,6 @@ function Selection ({ options, selected, handleChange }) {
   )
 }
 
-function CameraValues ({ position, rotation }) {
-  return (
-    <div>
-      <div>position = ({position.x.toFixed(3)}, {position.y.toFixed(3)}, {position.z.toFixed(3)})</div>
-      <div>rotation = ({rotation.x.toFixed(3)}, {rotation.y.toFixed(3)})</div>
-    </div>
-  )
-}
-
 function debounce (callbackFunction, delay) {
   let timer
   return (...args) => {
@@ -152,8 +157,8 @@ const compileRender = debounce((animation /* : ShaderAnimation */, source) => {
   animation.updateFragmentShader(source)
 }, 200)
 
-async function selectShader (shaderName, setCode) {
-  const shaderResponse = await window.fetch(shaderName)
+async function fetchShaderCode (shaderName, setCode) {
+  const shaderResponse = await window.fetch('/shaders/' + shaderName)
   const shaderSource = await shaderResponse.text()
   setCode(shaderSource)
   console.log(shaderName)
@@ -192,6 +197,10 @@ function useSelection () {
       setSelection({ start: event.target.selectionStart, end: event.target.selectionEnd })
     }
   }
+}
+
+function isLocalhost (hostname) {
+  return hostname === '0.0.0.0' || hostname === 'localhost' || hostname === '127.0.0.1'
 }
 
 ReactDOM.render(<App />, document.getElementById('app'))
