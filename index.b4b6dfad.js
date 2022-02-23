@@ -1015,44 +1015,48 @@ var _prismCore = require("prismjs/components/prism-core");
 var _prismClike = require("prismjs/components/prism-clike");
 var _prismC = require("prismjs/components/prism-c");
 var _prismGlsl = require("prismjs/components/prism-glsl");
+var _detectChangesWebsocketJs = require("./detect_changes_websocket.js");
 var _animationJs = require("./animation.js");
 var _scannerJs = require("../scanner.js");
 var _numbersJs = require("./numbers.js");
 var _s = $RefreshSig$(), _s1 = $RefreshSig$();
 const DEFAULT_SHADERS = [
+    'shell.frag',
     'dome.frag',
     'geometry.frag',
     'cone.frag',
     'marching.frag',
     'manyspheres.frag',
-    'mixing.frag',
     'simple.frag',
     'wheel.frag',
     'polar.frag',
-    'teeth.frag',
-    'flower.frag',
-    'shell.frag'
+    'flower.frag'
 ];
 function App() {
     _s();
     const [code1, setCode] = _react.useState('#version 100\n');
     const selection = useSelection();
-    const [shader, setShader] = _react.useState(window.location.hash.substr(1) || 'geometry.frag');
+    const [shader, setShader] = _react.useState(window.location.hash.substr(1) || DEFAULT_SHADERS[0]);
     const [errors, setErrors] = _react.useState('');
-    const [fps, setFPS] = _react.useState(0);
-    const [position, setPosition] = _react.useState({
+    const [fps, setFPS] = _react.useState(0); // const [position, setPosition] = useState({ x: 0, y: 1, z: 0 })
+    // const [rotation, setRotation] = useState({ x: 0, y: 0 })
+    const position = {
         x: 0,
         y: 1,
         z: 0
-    });
-    const [rotation, setRotation] = _react.useState({
-        x: 0,
-        y: 0
-    });
+    };
     const camera = _react.useRef(new _animationJs.Camera(position, (c)=>{
     }));
     const canvas = _react.useRef();
     const animation = _react.useRef();
+    _react.useEffect(()=>{
+        if (isLocalhost(window.location.hostname)) _detectChangesWebsocketJs.connectWebsocket((filename)=>{
+            if (filename === shader) {
+                console.log('Refetching shader: ', shader);
+                fetchShaderCode(shader, setCode);
+            } else setShader(filename);
+        });
+    }, []);
     _react.useEffect(()=>{
         if (!canvas.current) return;
         const newAnimation = new _animationJs.ShaderAnimation(canvas.current, camera.current, setErrors, setFPS);
@@ -1063,7 +1067,7 @@ function App() {
     ]);
     _react.useEffect(()=>{
         console.log('Shader selected: ', shader);
-        selectShader(shader, setCode);
+        fetchShaderCode(shader, setCode);
     }, [
         shader
     ]);
@@ -1118,7 +1122,7 @@ function App() {
                         onKeyUp: (event)=>camera.current.handleKeyUp(event)
                     }, void 0, false, {
                         fileName: "src/index.jsx",
-                        lineNumber: 78,
+                        lineNumber: 89,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ _jsxDevRuntime.jsxDEV(Selection, {
@@ -1127,7 +1131,7 @@ function App() {
                         handleChange: setShader
                     }, void 0, false, {
                         fileName: "src/index.jsx",
-                        lineNumber: 82,
+                        lineNumber: 93,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ _jsxDevRuntime.jsxDEV("div", {
@@ -1137,13 +1141,13 @@ function App() {
                                 children: fps
                             }, void 0, false, {
                                 fileName: "src/index.jsx",
-                                lineNumber: 83,
+                                lineNumber: 94,
                                 columnNumber: 20
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "src/index.jsx",
-                        lineNumber: 83,
+                        lineNumber: 94,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ _jsxDevRuntime.jsxDEV("div", {
@@ -1155,7 +1159,7 @@ function App() {
                         ]
                     }, void 0, true, {
                         fileName: "src/index.jsx",
-                        lineNumber: 84,
+                        lineNumber: 95,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ _jsxDevRuntime.jsxDEV("div", {
@@ -1166,34 +1170,26 @@ function App() {
                                 onChange: updateToken
                             }, void 0, false, {
                                 fileName: "src/index.jsx",
-                                lineNumber: 85,
+                                lineNumber: 96,
                                 columnNumber: 29
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "src/index.jsx",
-                        lineNumber: 85,
-                        columnNumber: 9
-                    }, this),
-                    /*#__PURE__*/ _jsxDevRuntime.jsxDEV(CameraValues, {
-                        position: position,
-                        rotation: rotation
-                    }, void 0, false, {
-                        fileName: "src/index.jsx",
-                        lineNumber: 86,
+                        lineNumber: 96,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ _jsxDevRuntime.jsxDEV("pre", {
                         children: errors
                     }, void 0, false, {
                         fileName: "src/index.jsx",
-                        lineNumber: 87,
+                        lineNumber: 97,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "src/index.jsx",
-                lineNumber: 77,
+                lineNumber: 88,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ _jsxDevRuntime.jsxDEV("div", {
@@ -1206,22 +1202,22 @@ function App() {
                     highlight: (code)=>_prismCore.highlight(code, _prismCore.languages.glsl)
                 }, void 0, false, {
                     fileName: "src/index.jsx",
-                    lineNumber: 91,
+                    lineNumber: 101,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "src/index.jsx",
-                lineNumber: 90,
+                lineNumber: 100,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "src/index.jsx",
-        lineNumber: 76,
+        lineNumber: 87,
         columnNumber: 10
     }, this));
 }
-_s(App, "P7Qbt7u29+VVFUowpozTreYL3vs=", false, function() {
+_s(App, "sU+ZssScldBA//E9OQ4qXnBclvA=", false, function() {
     return [
         useSelection
     ];
@@ -1236,56 +1232,17 @@ function Selection({ options , selected , handleChange  }) {
                 children: option
             }, option, false, {
                 fileName: "src/index.jsx",
-                lineNumber: 102,
+                lineNumber: 112,
                 columnNumber: 30
             }, this)
         )
     }, void 0, false, {
         fileName: "src/index.jsx",
-        lineNumber: 101,
+        lineNumber: 111,
         columnNumber: 10
     }, this));
 }
 _c1 = Selection;
-function CameraValues({ position , rotation  }) {
-    return(/*#__PURE__*/ _jsxDevRuntime.jsxDEV("div", {
-        children: [
-            /*#__PURE__*/ _jsxDevRuntime.jsxDEV("div", {
-                children: [
-                    "position = (",
-                    position.x.toFixed(3),
-                    ", ",
-                    position.y.toFixed(3),
-                    ", ",
-                    position.z.toFixed(3),
-                    ")"
-                ]
-            }, void 0, true, {
-                fileName: "src/index.jsx",
-                lineNumber: 111,
-                columnNumber: 7
-            }, this),
-            /*#__PURE__*/ _jsxDevRuntime.jsxDEV("div", {
-                children: [
-                    "rotation = (",
-                    rotation.x.toFixed(3),
-                    ", ",
-                    rotation.y.toFixed(3),
-                    ")"
-                ]
-            }, void 0, true, {
-                fileName: "src/index.jsx",
-                lineNumber: 112,
-                columnNumber: 7
-            }, this)
-        ]
-    }, void 0, true, {
-        fileName: "src/index.jsx",
-        lineNumber: 110,
-        columnNumber: 10
-    }, this));
-}
-_c2 = CameraValues;
 function debounce(callbackFunction, delay) {
     let timer;
     return (...args)=>{
@@ -1304,8 +1261,8 @@ const compileRender = debounce((animation, source)=>{
     console.log('Debounced: Updating and compiling shader!');
     animation.updateFragmentShader(source);
 }, 200);
-async function selectShader(shaderName, setCode) {
-    const shaderResponse = await window.fetch(shaderName);
+async function fetchShaderCode(shaderName, setCode) {
+    const shaderResponse = await window.fetch('/shaders/' + shaderName);
     const shaderSource = await shaderResponse.text();
     setCode(shaderSource);
     console.log(shaderName);
@@ -1367,7 +1324,7 @@ function Token(props) {
         columnNumber: 10
     }, this));
 }
-_c3 = Token;
+_c2 = Token;
 function useSelection() {
     _s1();
     const [selection, setSelection] = _react.useState({
@@ -1387,24 +1344,26 @@ function useSelection() {
     };
 }
 _s1(useSelection, "+8FoJyhbkKy4FOERrQkPQ3/WeD4=");
+function isLocalhost(hostname) {
+    return hostname === '0.0.0.0' || hostname === 'localhost' || hostname === '127.0.0.1';
+}
 _reactDomDefault.default.render(/*#__PURE__*/ _jsxDevRuntime.jsxDEV(App, {
 }, void 0, false, {
     fileName: "src/index.jsx",
-    lineNumber: 195,
+    lineNumber: 199,
     columnNumber: 17
 }, undefined), document.getElementById('app'));
-var _c, _c1, _c2, _c3;
+var _c, _c1, _c2;
 $RefreshReg$(_c, "App");
 $RefreshReg$(_c1, "Selection");
-$RefreshReg$(_c2, "CameraValues");
-$RefreshReg$(_c3, "Token");
+$RefreshReg$(_c2, "Token");
 
   $parcel$ReactRefreshHelpers$98a3.postlude(module);
 } finally {
   window.$RefreshReg$ = prevRefreshReg;
   window.$RefreshSig$ = prevRefreshSig;
 }
-},{"react/jsx-dev-runtime":"iTorj","react":"21dqq","react-dom":"j6uA9","./simple-editor.jsx":"j1M8a","prismjs/components/prism-core":"dRApq","prismjs/components/prism-clike":"ioeQR","prismjs/components/prism-c":"4x4rq","prismjs/components/prism-glsl":"P0vrO","./animation.js":"k5ez6","../scanner.js":"4VGNy","./numbers.js":"9uLzp","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"km3Ru"}],"iTorj":[function(require,module,exports) {
+},{"react/jsx-dev-runtime":"iTorj","react":"21dqq","react-dom":"j6uA9","./simple-editor.jsx":"j1M8a","prismjs/components/prism-core":"dRApq","prismjs/components/prism-clike":"ioeQR","prismjs/components/prism-c":"4x4rq","prismjs/components/prism-glsl":"P0vrO","./animation.js":"k5ez6","../scanner.js":"4VGNy","./numbers.js":"9uLzp","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","@parcel/transformer-react-refresh-wrap/lib/helpers/helpers.js":"km3Ru","./detect_changes_websocket.js":"6zXPR"}],"iTorj":[function(require,module,exports) {
 'use strict';
 module.exports = require('./cjs/react-jsx-dev-runtime.development.js');
 
@@ -25348,6 +25307,32 @@ function splitSignificantDigits(number) {
         number,
         ''
     ];
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"6zXPR":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "connectWebsocket", ()=>connectWebsocket
+);
+function connectWebsocket(handleCodeChange) {
+    const socket = new window.WebSocket('ws://localhost:5555/changes');
+    socket.onopen = function(e) {
+        console.log('[open] Websocket connection established');
+    };
+    socket.onmessage = function(event) {
+        const filename = event.data;
+        console.log('Got code change message for: ', filename);
+        handleCodeChange(filename);
+    };
+    socket.onclose = function(event) {
+        if (event.wasClean) console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+        else // e.g. server process killed or network down
+        // event.code is usually 1006 in this case
+        console.log('[close] Connection died');
+    };
+    socket.onerror = function(error) {
+        console.log(`[websocket error] ${error.message}`);
+    };
 }
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["kn9T2","1SYPb","d8Dch"], "d8Dch", "parcelRequirec7d2")
